@@ -8,7 +8,7 @@ import gzip
 import json
 import logging
 import threading
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Callable, Literal
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,12 @@ class SummaryBufferWindow:
 
         self._load_from_redis()
 
-    def add(self, role: str, content: str, agent: str | None = None) -> Turn:
+    def add(
+        self,
+        role: Literal["user", "assistant", "system"],
+        content: str,
+        agent: str | None = None,
+    ) -> Turn:
         """Append a turn; triggers compaction if over token budget."""
         turn = Turn(role=role, content=content, agent=agent)
         with self._lock:

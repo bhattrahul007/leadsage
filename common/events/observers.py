@@ -211,7 +211,10 @@ class WebhookObserver(BaseObserver):
         try:
             import requests
 
-            payload = {"event_type": type(event).__name__, "data": _event_to_dict(event)}
+            payload: dict[str, Any] = {
+                "event_type": type(event).__name__,
+                "data": _event_to_dict(event),
+            }
             requests.post(self._url, json=payload, headers=self._headers, timeout=self._timeout)
         except Exception as exc:
             logger.debug("WebhookObserver send failed: %s", exc)
@@ -229,11 +232,12 @@ def _event_summary(event: Any) -> str:
     return "{" + ", ".join(fields) + "}"
 
 
-def _event_to_dict(event: Any) -> dict:
+def _event_to_dict(event: Any) -> dict[str, Any]:
     import dataclasses
 
-    if dataclasses.is_dataclass(event):
-        d = dataclasses.asdict(event)
+    # is_dataclass is True for both instances AND classes; guard with isinstance
+    if dataclasses.is_dataclass(event) and not isinstance(event, type):
+        d: dict[str, Any] = dataclasses.asdict(event)
         for k, v in d.items():
             if hasattr(v, "isoformat"):
                 d[k] = v.isoformat()

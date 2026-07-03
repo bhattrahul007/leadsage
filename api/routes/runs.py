@@ -64,11 +64,11 @@ def get_run_status(session_id: str) -> RunStatus:
 
     return RunStatus(
         session_id=session_id,
-        status=session.status,
-        total_leads=session.total_leads or 0,
-        hot_count=session.hot_count or 0,
-        warm_count=session.warm_count or 0,
-        cold_count=session.cold_count or 0,
+        status=str(session.status),
+        total_leads=int(session.total_leads or 0),
+        hot_count=int(session.hot_count or 0),
+        warm_count=int(session.warm_count or 0),
+        cold_count=int(session.cold_count or 0),
     )
 
 
@@ -94,14 +94,14 @@ def get_run_leads(
     leads = leads[:limit]
     summaries = [
         LeadSummary(
-            domain=lead.domain,
-            company_name=lead.company_name or "",
-            lead_tier=lead.lead_tier or "cold",
-            icp_relevance_score=lead.icp_relevance_score or 0.0,
-            tech_stack=lead.tech_stack or [],
-            company_summary=lead.company_summary or "",
+            domain=str(lead.domain),
+            company_name=str(lead.company_name or ""),
+            lead_tier=str(lead.lead_tier or "cold"),
+            icp_relevance_score=float(lead.icp_relevance_score or 0.0),
+            tech_stack=list(lead.tech_stack or []),
+            company_summary=str(lead.company_summary or ""),
             outreach_subject="",
-            source_url=lead.source_url or "",
+            source_url=str(lead.source_url or ""),
         )
         for lead in leads
     ]

@@ -54,8 +54,9 @@ class SseObserver(BaseObserver):
 
 def _to_sse(event: Any) -> str:
     """Serialize a pipeline event to an SSE data line."""
-    if dataclasses.is_dataclass(event):
-        d = dataclasses.asdict(event)
+    # is_dataclass returns True for both instances AND classes; guard with isinstance
+    if dataclasses.is_dataclass(event) and not isinstance(event, type):
+        d: dict[str, Any] = dataclasses.asdict(event)
         for k, v in d.items():
             if hasattr(v, "isoformat"):
                 d[k] = v.isoformat()
