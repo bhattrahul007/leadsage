@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 import logging
-from typing import TYPE_CHECKING, Callable, Any
+from typing import TYPE_CHECKING, Any
 
 from common.context.window import SummaryBufferWindow
 
@@ -17,9 +18,9 @@ _WINDOWS: dict[str, SummaryBufferWindow] = {}
 
 def get_window(
     session_id: str,
-    config: "AppConfig",
-    cache: "LeadCache | None" = None,
-    bus: "EventBus | None" = None,
+    config: AppConfig,
+    cache: LeadCache | None = None,
+    bus: EventBus | None = None,
 ) -> SummaryBufferWindow:
     """Return (or create) the SummaryBufferWindow for a session.
 

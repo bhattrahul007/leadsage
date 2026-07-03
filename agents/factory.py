@@ -30,11 +30,13 @@ class AgentFactory:
 
     @staticmethod
     def _ensure_registered() -> None:
-        from agents import icp_parser  # noqa: F401
-        from agents import icp_refiner  # noqa: F401
-        from agents import lead_scorer  # noqa: F401
-        from agents import research  # noqa: F401
-        from agents import contact_finder  # noqa: F401
+        from agents import (
+            contact_finder,  # noqa: F401
+            icp_parser,  # noqa: F401
+            icp_refiner,  # noqa: F401
+            lead_scorer,  # noqa: F401
+            research,  # noqa: F401
+        )
 
     @classmethod
     def create(

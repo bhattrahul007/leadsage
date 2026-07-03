@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 import logging
-from typing import TYPE_CHECKING, Callable, Type
+from typing import TYPE_CHECKING
 
 from common.llm.base import BaseLLM
 from common.llm.response_cache import LLMResponseCache
@@ -43,7 +44,7 @@ class CachedLLM(BaseLLM):
     def invoke(self, prompt: str) -> str:
         return self._inner.invoke(prompt)
 
-    def invoke_structured(self, prompt: str, schema: Type["BaseModel"]) -> "BaseModel":
+    def invoke_structured(self, prompt: str, schema: type[BaseModel]) -> BaseModel:
         cached_dict = self._cache.get(prompt, self.model_name)
         if cached_dict is not None:
             try:
@@ -71,7 +72,7 @@ class CachedLLM(BaseLLM):
         cache: LLMResponseCache,
         agent_name: str,
         on_cache_hit: Callable[[str], None] | None = None,
-    ) -> "CachedLLM":
+    ) -> CachedLLM:
         """Create a CachedLLM with agent-appropriate TTL."""
         ttl = _DEFAULT_TTLS.get(agent_name, 3_600)
         return cls(inner, cache, ttl=ttl, on_cache_hit=on_cache_hit)

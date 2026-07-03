@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+from collections import deque
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime
 import gzip
 import json
 import logging
 import threading
-from collections import deque
-from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 logger = logging.getLogger(__name__)
 
@@ -23,13 +24,13 @@ class Turn:
     role: Literal["user", "assistant", "system"]
     content: str
     agent: str | None = None
-    ts: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    ts: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def to_dict(self) -> dict:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, d: dict) -> "Turn":
+    def from_dict(cls, d: dict) -> Turn:
         return cls(**{k: v for k, v in d.items() if k in cls.__dataclass_fields__})
 
     @property
