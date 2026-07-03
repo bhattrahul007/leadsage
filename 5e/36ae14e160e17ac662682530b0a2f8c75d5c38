@@ -1,0 +1,37 @@
+api/routes/runs.py
+  s_b9235bb6816b54::t_d6852d6230c298 92
+  s_b9235bb6816b54::t_ed137496791808 97-102,104,106
+common/session/manager.py
+  s_b9235bb6816b54::t_b6a47d052c5d0a 18
+main.py
+  s_b9235bb6816b54::t_93dc93c804766e 220,242
+common/schemas/lead_output.py
+  s_b9235bb6816b54::t_b6895b9c43f385 4,10-11
+  s_b9235bb6816b54::t_c720d4c66ed311 3
+discovery/enricher.py
+  s_b9235bb6816b54::t_b74a8ea57c27c6 196
+  s_b9235bb6816b54::t_00c03c17f6d607 314
+agents/icp_refiner.py
+  s_b9235bb6816b54::t_ef9a98b58c272f 47,56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "5e36ae14e160e17ac662682530b0a2f8c75d5c38",
+  "prompts": {},
+  "humans": {
+    "h_367844763c4d75": {
+      "author": "Rahul Bhatt <rahul.bhatt@1mg.com>"
+    }
+  },
+  "sessions": {
+    "s_b9235bb6816b54": {
+      "agent_id": {
+        "tool": "DeputyDev",
+        "id": "451272",
+        "model": "CLAUDE_4_POINT_6_SONNET"
+      },
+      "human_author": "Rahul Bhatt <rahul.bhatt@1mg.com>"
+    }
+  }
+}
