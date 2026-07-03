@@ -1,7 +1,8 @@
+from collections.abc import AsyncGenerator
 import dataclasses
 import json
 import queue
-from typing import Any, AsyncGenerator
+from typing import Any
 
 from common.events.events import ALL_EVENT_TYPES
 from common.events.observers import BaseObserver

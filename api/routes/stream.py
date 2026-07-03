@@ -36,9 +36,10 @@ async def stream_run(req: RunRequest) -> StreamingResponse:
     The ``X-Session-Id`` response header carries the session ID for follow-up
     polling via ``GET /runs/{session_id}/status``.
     """
-    from common.sanitise import sanitise_query
-    from common.events import EventBus, LoggingObserver, SseObserver
     from fastapi import HTTPException
+
+    from common.events import EventBus, LoggingObserver, SseObserver
+    from common.sanitise import sanitise_query
 
     try:
         query = sanitise_query(req.query)
