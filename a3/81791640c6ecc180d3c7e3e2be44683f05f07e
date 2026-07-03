@@ -1,0 +1,26 @@
+common/events/observers.py
+  s_b9235bb6816b54::t_4470f45e569c4c 160-161,166-167,170-171
+.github/workflows/ci.yml
+  s_b9235bb6816b54::t_6911d3c8ca4de0 16-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "a381791640c6ecc180d3c7e3e2be44683f05f07e",
+  "prompts": {},
+  "humans": {
+    "h_367844763c4d75": {
+      "author": "Rahul Bhatt <rahul.bhatt@1mg.com>"
+    }
+  },
+  "sessions": {
+    "s_b9235bb6816b54": {
+      "agent_id": {
+        "tool": "DeputyDev",
+        "id": "451272",
+        "model": "CLAUDE_4_POINT_6_SONNET"
+      },
+      "human_author": "Rahul Bhatt <rahul.bhatt@1mg.com>"
+    }
+  }
+}
