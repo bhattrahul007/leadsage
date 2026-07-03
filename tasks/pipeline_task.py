@@ -13,7 +13,7 @@ def run_pipeline(
     query: str,
     session_id: str,
     config_overrides: dict | None = None,
-    bus: "EventBus | None" = None,
+    bus: EventBus | None = None,
 ) -> dict:
     """Execute a full lead generation pipeline run.
 
@@ -26,9 +26,9 @@ def run_pipeline(
     """
     from common.config import load_config
     from common.events import EventBus, LoggingObserver
-    from common.session import LeadCache
     from common.ratelimit import RateLimiterRegistry
-    from services import PipelineService, PersistenceService
+    from common.session import LeadCache
+    from services import PersistenceService, PipelineService
 
     cfg = load_config()
     RateLimiterRegistry.configure(cfg.rate_limits.to_dict())
