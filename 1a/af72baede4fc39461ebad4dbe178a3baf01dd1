@@ -1,0 +1,12 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "1aaf72baede4fc39461ebad4dbe178a3baf01dd1",
+  "prompts": {},
+  "humans": {
+    "h_367844763c4d75": {
+      "author": "Rahul Bhatt <rahul.bhatt@1mg.com>"
+    }
+  }
+}
