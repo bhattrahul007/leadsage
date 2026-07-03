@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import re
 from collections.abc import Iterable
+import re
 
 _EMAIL_RE = re.compile(r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$")
 

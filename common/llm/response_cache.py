@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 import gzip
 import hashlib
 import json
 import logging
 import threading
-from collections import OrderedDict
 from typing import Any
 
 logger = logging.getLogger(__name__)
