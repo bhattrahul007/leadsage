@@ -1,0 +1,27 @@
+pyproject.toml
+  s_b9235bb6816b54::t_d0f7e50d17edbe 74-77
+  s_b9235bb6816b54::t_fc63bb20704b01 2,10,12-13,17,20,22-23,26-32,36,39-40,42-43,45-48,56,59-61
+  s_b9235bb6816b54::t_a337224730c496 68-72
+  s_b9235bb6816b54::t_5004d58d4bd7f2 73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "ab8bb913789b5777614e1d9e3d00fb3615bcf05f",
+  "prompts": {},
+  "humans": {
+    "h_367844763c4d75": {
+      "author": "Rahul Bhatt <rahul.bhatt@1mg.com>"
+    }
+  },
+  "sessions": {
+    "s_b9235bb6816b54": {
+      "agent_id": {
+        "tool": "DeputyDev",
+        "id": "451272",
+        "model": "CLAUDE_4_POINT_6_SONNET"
+      },
+      "human_author": "Rahul Bhatt <rahul.bhatt@1mg.com>"
+    }
+  }
+}
