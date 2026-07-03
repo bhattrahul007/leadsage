@@ -1,0 +1,33 @@
+pyproject.toml
+  s_b9235bb6816b54::t_c6088760624570 83-84,86-123
+common/context/window.py
+  s_b9235bb6816b54::t_9e7f233b6228f2 11,83-88
+api/routes/runs.py
+  s_b9235bb6816b54::t_593a113c1ccaf1 67-71,97-102,104
+common/events/sse.py
+  s_b9235bb6816b54::t_843dafb8d15133 57-59
+common/events/observers.py
+  s_b9235bb6816b54::t_892f16ae1d9b41 214-217
+  s_b9235bb6816b54::t_d4b49610af7adf 235,238-240
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "bbce524a457b974a89345c98dd567da2d722692e",
+  "prompts": {},
+  "humans": {
+    "h_367844763c4d75": {
+      "author": "Rahul Bhatt <rahul.bhatt@1mg.com>"
+    }
+  },
+  "sessions": {
+    "s_b9235bb6816b54": {
+      "agent_id": {
+        "tool": "DeputyDev",
+        "id": "451272",
+        "model": "CLAUDE_4_POINT_6_SONNET"
+      },
+      "human_author": "Rahul Bhatt <rahul.bhatt@1mg.com>"
+    }
+  }
+}
