@@ -13,9 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
-      - run: uv pip install ruff
-      - run: ruff check . --select E,F,I,UP
-      - run: ruff format --check .
+      - run: uvx ruff check . --select E,F,I,UP
+      - run: uvx ruff format --check .
 
   type-check:
     name: Type check (mypy)
@@ -23,16 +22,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
-      - run: |
-          uv pip install mypy \
-            langchain langchain-ollama pydantic sqlalchemy redis requests \
-            fastapi
-      - run: mypy common agents discovery services api --ignore-missing-imports
+      - run: uv sync --group dev
+      - run: uv run mypy common agents discovery services api --ignore-missing-imports
 
   security:
     name: Security scan (bandit)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: pip install bandit
-      - run: bandit -r common agents discovery services api -ll -x .venv
+      - uses: astral-sh/setup-uv@v3
+      - run: uvx bandit -r common agents discovery services api -ll -x .venv
