@@ -1,0 +1,124 @@
+version: "3.9"
+
+x-common-env: &common-env
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+  REDIS_URL: "redis://redis:6379/0"
+  POSTGRES_URL: "postgresql://${POSTGRES_USER:-leads}:${POSTGRES_PASSWORD:-leadspass}@postgres:5432/${POSTGRES_DB:-leadsdb}"
+  # Search providers
+  SERPER_API_KEY: "${SERPER_API_KEY:-}"
+  TAVILY_API_KEY: "${TAVILY_API_KEY:-}"
+  GOOGLE_API_KEY: "${GOOGLE_API_KEY:-}"
+  GOOGLE_CX_KEY: "${GOOGLE_CX_KEY:-}"
+  BING_SUBSCRIPTION_KEY: "${BING_SUBSCRIPTION_KEY:-}"
+  SEARCHAPI_API_KEY: "${SEARCHAPI_API_KEY:-}"
+  # LLM
+  OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+  # Proxy
+  BRIGHTDATA_USERNAME: "${BRIGHTDATA_USERNAME:-}"
+  BRIGHTDATA_PASSWORD: "${BRIGHTDATA_PASSWORD:-}"
+  SMARTPROXY_USERNAME: "${SMARTPROXY_USERNAME:-}"
+  SMARTPROXY_PASSWORD: "${SMARTPROXY_PASSWORD:-}"
+
+services:
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: >
+      redis-server
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save ""
+      --appendonly no
+      --loglevel warning
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    mem_limit: 600m
+    memswap_limit: 600m
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     "${POSTGRES_USER:-leads}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-leadspass}"
+      POSTGRES_DB:       "${POSTGRES_DB:-leadsdb}"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    mem_limit: 512m
+    memswap_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-leads}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+    restart: "no"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+    volumes:
+      - ./config:/app/config:ro
+      - ./output:/app/output
+    mem_limit: 2g
+    memswap_limit: 2g
+    # Override CMD to pass query:
+    #   docker compose run --rm app "Find US SaaS companies using K8s"
+    command: ["python", "main.py"]
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+    mem_limit: 256m
+    profiles: ["monitoring"]
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_PASSWORD:-admin}"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    mem_limit: 256m
+    profiles: ["monitoring"]
+
+volumes:
+  redis_data:
+  postgres_data:
+  prometheus_data:
+  grafana_data:

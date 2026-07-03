@@ -1,0 +1,113 @@
+{
+  "_comment": "AI Lead Generation Agent — complete configuration.",
+  "llm": {
+    "provider": "ollama",
+    "models": {
+      "icp_parser":     "qwen2.5:3b",
+      "lead_scorer":    "qwen2.5:7b",
+      "outreach":       "qwen2.5:7b",
+      "contact_finder": "qwen2.5:3b"
+    },
+    "ollama": {
+      "base_url":    "http://localhost:11434",
+      "temperature": 0.1,
+      "num_predict": 2048,
+      "timeout":     120
+    },
+    "openai_compatible": {
+      "base_url":    "http://localhost:11434/v1",
+      "api_key":     "ollama",
+      "temperature": 0.1,
+      "timeout":     60
+    },
+    "openai": {
+      "api_key_env": "OPENAI_API_KEY",
+      "temperature": 0.1,
+      "timeout":     60
+    }
+  },
+  "pipeline": {
+    "providers": [],
+    "crawler_type": "requests",
+    "max_results_per_query": 10,
+    "search_workers": 5,
+    "crawl_enabled": true,
+    "max_urls_to_crawl": 30,
+    "crawl_workers": 10,
+    "crawl_timeout": 15,
+    "domain_delay": 0.0,
+    "enrich_enabled": true,
+    "min_lead_score": 0.15,
+    "skip_domains": [
+      "youtube.com", "twitter.com", "x.com", "facebook.com",
+      "instagram.com", "tiktok.com", "reddit.com",
+      "wikipedia.org", "linkedin.com"
+    ],
+    "prefer_domains": [
+      "crunchbase.com", "glassdoor.com", "builtwith.com",
+      "stackshare.io", "techcrunch.com"
+    ]
+  },
+  "proxy": {
+    "enabled": false,
+    "provider": "none",
+    "static": {
+      "proxies": [],
+      "quarantine_seconds": 300
+    },
+    "brightdata": {
+      "host":             "brd.superproxy.io",
+      "port":             22225,
+      "username":         "",
+      "password":         "",
+      "country":          "us",
+      "session_rotation": "per_request"
+    },
+    "smartproxy": {
+      "username": "",
+      "password": "",
+      "endpoint": "gate.smartproxy.com",
+      "port":     10000,
+      "country":  ""
+    }
+  },
+  "session": {
+    "redis_enabled":              true,
+    "redis_url":                  "redis://localhost:6379/0",
+    "lru_maxsize":                512,
+    "crawl_cache_ttl":            86400,
+    "lead_cache_ttl":             604800,
+    "session_ttl":                604800,
+    "max_sessions_in_memory":     50,
+    "memory_lru_text_maxsize":    64,
+    "memory_lru_summary_maxsize": 512
+  },
+  "scoring": {
+    "hot_threshold":           0.65,
+    "warm_threshold":          0.35,
+    "llm_enabled":             true,
+    "max_outreach_points":     5,
+    "max_concurrent_scorers":  5,
+    "research_hot_leads":      true,
+    "find_contacts":           true
+  },
+  "output": {
+    "format":           "json",
+    "save_to":          "output/leads.json",
+    "top_leads":        20,
+    "include_evidence": true,
+    "pretty_print":     true
+  },
+  "events": {
+    "console_observer":  true,
+    "logging_observer":  true,
+    "metrics_observer":  true,
+    "webhook_enabled":   false,
+    "webhook_url":       "",
+    "webhook_secret":    ""
+  },
+  "logging": {
+    "level":  "INFO",
+    "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+  }
+}

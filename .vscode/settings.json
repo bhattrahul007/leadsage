@@ -1,0 +1,3 @@
+{
+    "black-formatter.args": ["--config", "./pyproject.toml"]
+}

@@ -1,0 +1,52 @@
+[project]
+name = "llm"
+version = "0.2.0"
+description = "AI Lead Generation Agent — configurable, multi-model, production-ready"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    # LLM backends
+    "langchain>=0.3.0",
+    "langchain-ollama>=0.2.0",
+    "langgraph>=0.2.0",
+    # HTTP / crawling
+    "requests>=2.32.0",
+    # Data validation
+    "pydantic>=2.7.0",
+    # Cache
+    "redis>=5.0.0",
+]
+
+[project.optional-dependencies]
+# OpenAI-compatible LLM backend
+openai = ["langchain-openai>=0.1.0"]
+
+# Playwright crawler (JS-rendered pages)
+playwright = ["playwright>=1.44.0"]
+
+# Database persistence
+postgres = ["psycopg2-binary>=2.9.0"]
+
+# Full dev setup
+dev = [
+    "ruff>=0.4.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[project.scripts]
+lead-agent = "main:main"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]
+
+[tool.uv]
+dev-dependencies = [
+    "ruff>=0.4.0",
+    "pytest>=8.0.0",
+]
