@@ -1,0 +1,24 @@
+common/events/sse.py
+  s_b9235bb6816b54::t_dd898896a1e401 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "fc68071a2f8e13703213e54785660e49d8df7f58",
+  "prompts": {},
+  "humans": {
+    "h_367844763c4d75": {
+      "author": "Rahul Bhatt <rahul.bhatt@1mg.com>"
+    }
+  },
+  "sessions": {
+    "s_b9235bb6816b54": {
+      "agent_id": {
+        "tool": "DeputyDev",
+        "id": "451272",
+        "model": "CLAUDE_4_POINT_6_SONNET"
+      },
+      "human_author": "Rahul Bhatt <rahul.bhatt@1mg.com>"
+    }
+  }
+}
