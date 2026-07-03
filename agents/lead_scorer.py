@@ -140,7 +140,9 @@ class LeadScorerAgent(BaseAgent):
             try:
                 enrichment = cast(
                     _LLMEnrichment,
-                    self.llm.invoke_structured(_build_prompt(enriched_lead, self._icp), _LLMEnrichment),
+                    self.llm.invoke_structured(
+                        _build_prompt(enriched_lead, self._icp), _LLMEnrichment
+                    ),
                 )
                 tier = LeadTier(enrichment.tier)
                 company_summary = enrichment.company_summary

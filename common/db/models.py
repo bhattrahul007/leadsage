@@ -283,7 +283,9 @@ class OutreachSuggestionModel(Base):
         DateTime(timezone=True), default=_now, server_default=func.now()
     )
 
-    lead: Mapped[LeadModel | None] = relationship("LeadModel", back_populates="outreach_suggestions")
+    lead: Mapped[LeadModel | None] = relationship(
+        "LeadModel", back_populates="outreach_suggestions"
+    )
 
 
 class AgentRunModel(Base):

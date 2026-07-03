@@ -145,7 +145,8 @@ class PipelineService:
         from agents.research import ResearchAgent
 
         researcher = cast(
-            ResearchAgent, AgentFactory.create("research", self._cfg, bus=self._bus, session=session)
+            ResearchAgent,
+            AgentFactory.create("research", self._cfg, bus=self._bus, session=session),
         )
         mem = MemoryManager.from_config(self._cfg)
         domain_pages = _group_pages_by_domain(result.crawled_pages)
