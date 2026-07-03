@@ -1,0 +1,78 @@
+pyproject.toml
+  s_b9235bb6816b54::t_c4b6e4c5ed6871 3,18-21,25,28-30,39-46,64
+common/llm/anthropic.py
+  s_b9235bb6816b54::t_00e63cca3b7716 1-55
+config/config.json
+  s_b9235bb6816b54::t_a71fd05f042463 8-24,40-58,63-80,82-83,85-112,120-121,124,126,129-130,148,150-163,165,171,175,183,192
+discovery/retreivers/__init__.py
+  s_b9235bb6816b54::t_f6b20e2bc84678 1-25
+common/db/repositories/__init__.py
+  s_b9235bb6816b54::t_7537122519b474 1-22
+common/db/repositories/telemetry.py
+  s_b9235bb6816b54::t_774a7b44c1695a 1-160
+common/config.py
+  s_b9235bb6816b54::t_46e5f4a43e78e2 16-19,36,45-83,89-90,94,96,100-144,151,153-155,159-160,163-165,170-172,242-245,249-253,261,295
+common/db/repositories/companies.py
+  s_b9235bb6816b54::t_b709d39082cf2b 1-81
+common/session/cache.py
+  s_b9235bb6816b54::t_b934e82a45031d 74,76-82,85-98,101
+  s_b9235bb6816b54::t_a60bda1f4b4bf0 299-313
+common/llm/factory.py
+  s_b9235bb6816b54::t_205a6a6c07b591 14,16-18,23-35,41-42,47-48,55,60-99,102-120,122-123,128
+common/session/manager.py
+  s_b9235bb6816b54::t_ddeae95e2501d7 10,18,23-38,73,77-78,80-81,85-86,91,145,160-254,271-272
+common/db/repositories/base.py
+  s_b9235bb6816b54::t_75ae3ba108d23b 1-40
+main.py
+  s_b9235bb6816b54::t_8a8e6d00972bd5 422-500
+  s_b9235bb6816b54::t_59bcd54566ef7b 69-78
+  s_b9235bb6816b54::t_4e4dbb0c0b0b06 266-269
+discovery/retreivers/github/github_search.py
+  s_b9235bb6816b54::t_6651febbc73cc5 1-105
+agents/factory.py
+  s_b9235bb6816b54::t_e43cdbd2e596f2 95
+common/db/repositories/leads.py
+  s_b9235bb6816b54::t_7961956f043aa9 1-68
+docker/postgres/init.sql
+  s_b9235bb6816b54::t_35db3fd1cce428 1-3,6-24,26-71,74-76,78-112,115-141,143-186,188-207,209-306
+  h_367844763c4d75 4,25,77,113,187,208
+.env.example
+  s_b9235bb6816b54::t_61c7dea72bd7be 1,9-22,24-29,31,37,41-44,46,49
+discovery/retreivers/yc/yc_search.py
+  s_b9235bb6816b54::t_856caab2923487 1-125
+common/db/__init__.py
+  s_b9235bb6816b54::t_3122a1a60ca632 1-63
+common/db/models.py
+  s_b9235bb6816b54::t_2d36f4ce9236fb 1-283
+discovery/retreivers/crunchbase/crunchbase_search.py
+  s_b9235bb6816b54::t_007220af28b786 1-84
+common/db/session.py
+  s_b9235bb6816b54::t_cc9a30b0cc031f 1-85,101-104
+  s_b9235bb6816b54::t_d140d7ff59851a 86-100
+common/db/repositories/sessions.py
+  s_b9235bb6816b54::t_a18a1131b511f7 1-67,81-83
+  s_b9235bb6816b54::t_5d6684123ef981 68-80
+common/db/repositories/conversations.py
+  s_b9235bb6816b54::t_4a9be89e01a895 1-51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "2edbb92476fce229679f25ddf52ceef0498a5563",
+  "prompts": {},
+  "humans": {
+    "h_367844763c4d75": {
+      "author": "Rahul Bhatt <rahul.bhatt@1mg.com>"
+    }
+  },
+  "sessions": {
+    "s_b9235bb6816b54": {
+      "agent_id": {
+        "tool": "DeputyDev",
+        "id": "451272",
+        "model": "CLAUDE_4_POINT_6_SONNET"
+      },
+      "human_author": "Rahul Bhatt <rahul.bhatt@1mg.com>"
+    }
+  }
+}
