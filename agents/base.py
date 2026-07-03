@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from common.llm.base import BaseLLM
     from common.events.bus import EventBus
+    from common.llm.base import BaseLLM
     from common.session.manager import Session
 
 
@@ -36,8 +36,8 @@ class BaseAgent(ABC):
 
     def _safe_invoke(self, prompt: str, schema, fallback=None):
         """Guarded structured LLM call — returns ``fallback`` on any error."""
-        import logging
         import concurrent.futures
+        import logging
 
         budget = self._timeout_budget_s
         try:

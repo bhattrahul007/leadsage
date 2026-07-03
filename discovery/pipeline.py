@@ -1,19 +1,19 @@
 from __future__ import annotations
 
 import concurrent.futures
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 import logging
 import time
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from common.schemas.icp_request import IcpDiscoveryQuery
+from discovery.crawler import CrawledPage, CrawlerConfig
+from discovery.enricher import EnrichedLead, EnricherConfig, LeadEnricher
+from discovery.query_planner import PlannedQuery, QueryPlan, QueryPlanner
 from discovery.retreivers.base import SearchConfig, SearchResult
-from discovery.crawler import CrawledPage, CrawlerConfig, WebCrawler
-from discovery.enricher import EnricherConfig, EnrichedLead, LeadEnricher
 from discovery.retreivers.models import SearchSession, _normalize_url
 from discovery.retreivers.orchestrator import OrchestratorConfig, SearchOrchestrator
-from discovery.query_planner import PlannedQuery, QueryPlan, QueryPlanner
 
 if TYPE_CHECKING:
     from common.events.bus import EventBus
@@ -91,7 +91,7 @@ class StageMetrics:
         return (self.completed_at - self.started_at).total_seconds() * 1000
 
     def finish(self, items_out: int, error_count: int = 0) -> None:
-        self.completed_at = datetime.now(timezone.utc)
+        self.completed_at = datetime.now(UTC)
         self.items_out = items_out
         self.error_count = error_count
 
@@ -105,10 +105,10 @@ class PipelineResult:
     leads: list[EnrichedLead]
     stage_metrics: list[StageMetrics]
     pipeline_ms: float
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def top_leads(self, n: int = 20) -> list[EnrichedLead]:
-        return sorted(self.leads, key=lambda l: -l.icp_relevance_score)[:n]
+        return sorted(self.leads, key=lambda lead: -lead.icp_relevance_score)[:n]
 
     @property
     def all_search_results(self) -> list[SearchResult]:
@@ -173,8 +173,8 @@ class DiscoveryPipeline:
     def __init__(
         self,
         config: PipelineConfig | None = None,
-        bus: "EventBus | None" = None,
-        cache: "LeadCache | None" = None,
+        bus: EventBus | None = None,
+        cache: LeadCache | None = None,
         proxy_provider=None,
         session_id: str = "default",
     ) -> None:
@@ -192,7 +192,7 @@ class DiscoveryPipeline:
         )
         self._crawler = self._build_crawler(crawler_config)
 
-    def _build_crawler(self, crawler_config: CrawlerConfig) -> "BaseCrawler":
+    def _build_crawler(self, crawler_config: CrawlerConfig) -> BaseCrawler:
         from discovery.crawlers import CrawlerFactory
 
         crawler_type = self.config.crawler_type
@@ -433,10 +433,8 @@ class DiscoveryPipeline:
             )
 
     def _publish_complete(self, icp: IcpDiscoveryQuery, leads: list, pipeline_ms: float) -> None:
-        from collections import Counter
         from common.events.events import PipelineCompleted
 
-        tiers = Counter(getattr(lead, "lead_tier", {}) for lead in leads)
         self._publish(
             PipelineCompleted(
                 session_id=self._session_id,
@@ -451,12 +449,12 @@ class DiscoveryPipeline:
 
 
 def _start_stage(name: str) -> StageMetrics:
-    return StageMetrics(stage=name, started_at=datetime.now(timezone.utc))
+    return StageMetrics(stage=name, started_at=datetime.now(UTC))
 
 
 def _expand_domain_pages(urls: list[str], signal_paths: list[str], per_domain: int) -> list[str]:
     """Expand a URL list to include signal pages per domain."""
-    from urllib.parse import urlparse, urljoin
+    from urllib.parse import urljoin, urlparse
 
     expanded: list[str] = []
     seen_domains: dict[str, int] = {}

@@ -1,7 +1,7 @@
-import logging
-import threading
 from abc import ABC, abstractmethod
 from collections import defaultdict
+import logging
+import threading
 from typing import Any
 
 from common.events.events import (

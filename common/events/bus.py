@@ -1,8 +1,14 @@
+from __future__ import annotations
+
+from collections import defaultdict
+from collections.abc import Callable
 import concurrent.futures
 import logging
 import threading
-from collections import defaultdict
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from common.events.observers import BaseObserver
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +47,7 @@ class EventBus:
                 getattr(handler, "__name__", repr(handler)),
             )
 
-    def subscribe_all(self, observer: "BaseObserver") -> None:
+    def subscribe_all(self, observer: BaseObserver) -> None:
         """Register an observer for all event types it declares."""
         for event_type in observer.subscribes_to():
             self.subscribe(event_type, observer.handle)
