@@ -109,7 +109,7 @@ class RequestsCrawler(BaseCrawler):
 
         session = requests.Session()
         session.headers.update({"User-Agent": cfg.user_agent})
-        session.proxies.update(proxy)
+        session.proxies.update({k: str(v) for k, v in proxy.items()})
 
         try:
             resp = session.get(

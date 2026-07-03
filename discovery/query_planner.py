@@ -71,10 +71,10 @@ class QueryPlan:
 
     def by_signal(self) -> dict[SignalType, list[PlannedQuery]]:
         """Group queries by their signal type."""
-        groups: dict[str, list[PlannedQuery]] = {}
+        groups: dict[SignalType, list[PlannedQuery]] = {}
         for q in self.queries:
             groups.setdefault(q.signal_type, []).append(q)
-        return groups  # type: ignore[return-value]
+        return groups
 
     def web_queries(self) -> list[PlannedQuery]:
         return [q for q in self.queries if q.search_type == "web"]
@@ -444,7 +444,7 @@ _SIZE_TERM_MAP: dict[str, str] = {
 }
 
 
-def _size_to_terms(sizes: list[str]) -> str:
+def _size_to_terms(sizes: list) -> str:
     terms = [_SIZE_TERM_MAP.get(s, s) for s in sizes]
     return " ".join(dict.fromkeys(terms))  # deduplicate, preserve order
 

@@ -212,7 +212,8 @@ class DiscoveryPipeline:
 
         m = _start_stage("plan")
         plan = self._planner.plan(icp)
-        m.finish(items_in=1, items_out=len(plan))
+        m.items_in = 1
+        m.finish(items_out=len(plan))
         metrics.append(m)
         logger.info("[pipeline] plan: %d queries", len(plan))
         self._publish_plan(plan)

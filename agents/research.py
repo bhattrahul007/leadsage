@@ -85,8 +85,10 @@ class ResearchAgent(BaseAgent):
     name = "research"
     required_model_role = "lead_scorer"  # uses the same model as scoring by default
 
-    def run(self, domain: str, pages: list, **kwargs: Any) -> CompanyProfile:
+    def run(self, *args: Any, **kwargs: Any) -> CompanyProfile:
         """Run research on ``domain`` using ``pages`` (list of CrawledPage)."""
+        domain: str = args[0] if args else str(kwargs.get("domain", ""))
+        pages: list = (args[1] if len(args) > 1 else None) or kwargs.get("pages", [])
         return self.research(domain, pages)
 
     def research(self, domain: str, pages: list) -> CompanyProfile:

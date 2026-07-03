@@ -30,7 +30,7 @@ class BaseAgent(ABC):
         self._timeout_budget_s = timeout_budget_s
 
     @abstractmethod
-    def run(self, **kwargs: Any) -> Any:
+    def run(self, *args: Any, **kwargs: Any) -> Any:
         """Execute the agent's task. Should never raise."""
         ...
 

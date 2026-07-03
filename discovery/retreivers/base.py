@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 import logging
-from typing import ClassVar, Literal, TypedDict
+from typing import Any, ClassVar, Literal, TypedDict, cast
 from urllib.parse import urlparse
 
 import requests
@@ -229,7 +230,7 @@ class BaseSearchProvider(ABC):
         title: str,
         href: str,
         body: str,
-        metadata: SearchResultMetadata | None = None,
+        metadata: Mapping[str, Any] | None = None,
     ) -> SearchResult:
         """Build a fully-populated SearchResult from provider raw fields."""
         return SearchResult(
@@ -242,7 +243,7 @@ class BaseSearchProvider(ABC):
             query=self.query,
             search_type=self.config.search_type,
             fetched_at=_utc_now(),
-            metadata=metadata or {},
+            metadata=cast(SearchResultMetadata, dict(metadata) if metadata else {}),
         )
 
     @staticmethod

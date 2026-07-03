@@ -5,7 +5,7 @@ from typing import Any
 
 from agents.base import BaseAgent
 from agents.factory import register_agent
-from common.schemas.icp_request import IcpDiscoveryQuery
+from common.schemas.icp_request import CompanySize, IcpDiscoveryQuery
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +50,9 @@ class IcpParserAgent(BaseAgent):
     name = "icp_parser"
     required_model_role = "icp_parser"
 
-    def run(self, query: str, **kwargs: Any) -> IcpDiscoveryQuery:
+    def run(self, *args: Any, **kwargs: Any) -> IcpDiscoveryQuery:
         """Alias so the agent works with ``AgentFactory.create().run()``."""
+        query: str = args[0] if args else str(kwargs.get("query", ""))
         return self.parse(query)
 
     def parse(self, query: str) -> IcpDiscoveryQuery:
@@ -67,7 +68,9 @@ class IcpParserAgent(BaseAgent):
         prompt = f"{_PARSER_SYSTEM_PROMPT}\n\nUser query:\n{query}"
 
         try:
-            result: IcpDiscoveryQuery = self.llm.invoke_structured(prompt, IcpDiscoveryQuery)
+            from typing import cast as _cast
+
+            result = _cast(IcpDiscoveryQuery, self.llm.invoke_structured(prompt, IcpDiscoveryQuery))
             logger.info(
                 "ICP parsed [model=%s confidence=%.2f]: %s…",
                 self.llm.model_name,
@@ -178,7 +181,7 @@ _TITLE_KWS: list[str] = [
     "vp product",
 ]
 
-_SIZE_KWS: dict[str, list[str]] = {
+_SIZE_KWS: dict[CompanySize, list[str]] = {
     "startup": ["startup", "seed", "early stage", "series a"],
     "mid_market": [
         "mid-market",
@@ -233,7 +236,6 @@ def _keyword_fallback(query: str) -> IcpDiscoveryQuery:
     from common.schemas.icp_request import (
         BuyerPersona,
         CompanyIntent,
-        CompanySize,
         DiscoveryIntent,
         KeywordIntent,
         LocationFilter,
@@ -254,7 +256,7 @@ def _keyword_fallback(query: str) -> IcpDiscoveryQuery:
     sizes: list[CompanySize] = []
     for size, kws in _SIZE_KWS.items():
         if any(kw in q for kw in kws):
-            sizes.append(size)  # type: ignore[arg-type]
+            sizes.append(size)
 
     # Simple required keywords from meaningful words (exclude stopwords)
     _STOP = {"find", "the", "and", "for", "with", "that", "are", "in", "of", "a", "an"}

@@ -171,4 +171,4 @@ class PlaywrightCrawler(BaseCrawler):
                         error=str(exc),
                     )
 
-        return [results.get(u, results.get(u)) for u in urls]
+        return [results[u] for u in urls if u in results]

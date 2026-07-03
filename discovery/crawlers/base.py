@@ -5,13 +5,16 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from common.proxy.base import BaseProxyProvider, ProxyDict
-    from discovery.crawler import CrawledPage
+    from discovery.crawler import CrawledPage, CrawlerConfig
 
 
 class BaseCrawler(ABC):
     """
     Abstract web crawler interface.
     """
+
+    def __init__(self, config: CrawlerConfig | None = None) -> None:
+        pass
 
     @abstractmethod
     def crawl(

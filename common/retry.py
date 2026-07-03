@@ -6,7 +6,7 @@ import functools
 import logging
 import random
 import time
-from typing import Any, Literal, TypeVar
+from typing import Any, Literal, TypeVar, cast
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 
@@ -301,11 +301,11 @@ def retry(
 
     def decorator(func: _F) -> _F:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             return _execute_with_retry(func, cfg, args, kwargs)
 
-        wrapper.__retry_config__ = cfg
-        return wrapper
+        setattr(wrapper, "__retry_config__", cfg)
+        return cast(_F, wrapper)
 
     if _func is not None:
         return decorator(_func)
@@ -336,10 +336,10 @@ def retry_with_config(cfg: RetryConfig) -> Callable[[_F], _F]:
 
     def decorator(func: _F) -> _F:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             return _execute_with_retry(func, cfg, args, kwargs)
 
-        wrapper.__retry_config__ = cfg
-        return wrapper
+        setattr(wrapper, "__retry_config__", cfg)
+        return cast(_F, wrapper)
 
     return decorator

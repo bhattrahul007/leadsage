@@ -4,7 +4,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 import logging
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from common.config import AppConfig
@@ -54,8 +54,10 @@ class PipelineService:
         session = sess_mgr.get_or_create(query, session_id=session_id)
         self._emit_session_event(session, query)
 
+        from agents.icp_parser import IcpParserAgent
+
         icp_agent = AgentFactory.create("icp_parser", cfg, bus=self._bus, session=session)
-        icp = icp_agent.parse(query)
+        icp = cast(IcpParserAgent, icp_agent).parse(query)
         logger.info(
             "ICP: industries=%s tech=%s titles=%s confidence=%.2f",
             icp.target_company.industries[:3],
@@ -140,7 +142,11 @@ class PipelineService:
         hot = [s for s in scored if s.lead_tier.value == "hot"]
         if not hot:
             return
-        researcher = AgentFactory.create("research", self._cfg, bus=self._bus, session=session)
+        from agents.research import ResearchAgent
+
+        researcher = cast(
+            ResearchAgent, AgentFactory.create("research", self._cfg, bus=self._bus, session=session)
+        )
         mem = MemoryManager.from_config(self._cfg)
         domain_pages = _group_pages_by_domain(result.crawled_pages)
         for lead in hot[:5]:
@@ -156,9 +162,11 @@ class PipelineService:
 
     def _run_contact_finding(self, session, scored: list, result: PipelineResult) -> None:
         from agents import AgentFactory
+        from agents.contact_finder import ContactFinderAgent
 
-        contact_agent = AgentFactory.create(
-            "contact_finder", self._cfg, bus=self._bus, session=session
+        contact_agent = cast(
+            ContactFinderAgent,
+            AgentFactory.create("contact_finder", self._cfg, bus=self._bus, session=session),
         )
         domain_pages = _group_pages_by_domain(result.crawled_pages)
         for lead in scored[:10]:

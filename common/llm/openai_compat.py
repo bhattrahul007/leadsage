@@ -65,13 +65,18 @@ class OpenAICompatLLM(BaseLLM):
 
     def invoke(self, prompt: str) -> str:
         response = self._llm.invoke(prompt)
-        return response.content if hasattr(response, "content") else str(response)
+        content = response.content if hasattr(response, "content") else response
+        return content if isinstance(content, str) else str(content)
 
     def invoke_structured(self, prompt: str, schema: type[BaseModel]) -> BaseModel:
+        from typing import cast
+
         structured = self._llm.with_structured_output(schema)
         result = structured.invoke(prompt)
         if result is None:
             raise ValueError(
                 f"Model {self._model_name!r} returned None for schema {schema.__name__!r}"
             )
-        return result
+        if isinstance(result, dict):
+            return schema.model_validate(result)
+        return cast(BaseModel, result)

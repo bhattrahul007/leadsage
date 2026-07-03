@@ -27,10 +27,12 @@ class AnthropicLLM(BaseLLM):
                 "uv pip install langchain-anthropic"
             ) from exc
 
+        from pydantic import SecretStr
+
         self._model_name = model_name
         self._llm = ChatAnthropic(
             model=model_name,
-            api_key=api_key,
+            api_key=SecretStr(api_key),
             temperature=temperature,
             timeout=timeout,
         )
@@ -39,16 +41,19 @@ class AnthropicLLM(BaseLLM):
         from langchain_core.messages import HumanMessage
 
         response = self._llm.invoke([HumanMessage(content=prompt)])
-        return str(response.content)
+        content = response.content
+        return content if isinstance(content, str) else str(content)
 
     def invoke_structured(self, prompt: str, schema: type[BaseModel]) -> BaseModel:
+        from typing import cast
+
         from langchain_core.messages import HumanMessage
 
         structured = self._llm.with_structured_output(schema)
         result = structured.invoke([HumanMessage(content=prompt)])
-        if not isinstance(result, schema):
+        if isinstance(result, dict):
             return schema.model_validate(result)
-        return result
+        return cast(BaseModel, result)
 
     @property
     def model_name(self) -> str:

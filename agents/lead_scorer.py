@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import logging
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from pydantic import BaseModel, Field
 
@@ -105,8 +105,10 @@ class LeadScorerAgent(BaseAgent):
         self._warm_t = warm_threshold
         self._llm_enabled = llm_enabled
 
-    def run(self, enriched_leads: list, max_workers: int = 5, **kwargs: Any) -> list[ScoredLead]:
+    def run(self, *args: Any, **kwargs: Any) -> list[ScoredLead]:
         """Run scoring on a list of enriched leads. Used by AgentFactory."""
+        enriched_leads = args[0] if args else kwargs.get("enriched_leads", [])
+        max_workers = int(kwargs.get("max_workers", 5))
         return self.score_many(enriched_leads, max_workers=max_workers)
 
     # ------------------------------------------------------------------
@@ -136,9 +138,9 @@ class LeadScorerAgent(BaseAgent):
 
         if self._llm_enabled:
             try:
-                enrichment = self.llm.invoke_structured(
-                    _build_prompt(enriched_lead, self._icp),
+                enrichment = cast(
                     _LLMEnrichment,
+                    self.llm.invoke_structured(_build_prompt(enriched_lead, self._icp), _LLMEnrichment),
                 )
                 tier = LeadTier(enrichment.tier)
                 company_summary = enrichment.company_summary

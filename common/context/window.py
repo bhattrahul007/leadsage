@@ -8,7 +8,7 @@ import gzip
 import json
 import logging
 import threading
-from typing import TYPE_CHECKING, Any, Callable, Literal
+from typing import Any, Literal
 
 logger = logging.getLogger(__name__)
 

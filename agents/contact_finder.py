@@ -68,8 +68,10 @@ class ContactFinderAgent(BaseAgent):
     _LINKEDIN_RE = re.compile(r"linkedin\.com/in/[\w\-]+", re.I)
     _GITHUB_RE = re.compile(r"github\.com/[\w\-]+(?!/)", re.I)
 
-    def run(self, domain: str, pages: list, **kwargs: Any) -> list[DecisionMaker]:
+    def run(self, *args: Any, **kwargs: Any) -> list[DecisionMaker]:
         """Find contacts across all provided pages for ``domain``."""
+        domain: str = args[0] if args else str(kwargs.get("domain", ""))
+        pages: list = (args[1] if len(args) > 1 else None) or kwargs.get("pages", [])
         return self.find_contacts(domain, pages)
 
     def find_contacts(self, domain: str, pages: list) -> list[DecisionMaker]:

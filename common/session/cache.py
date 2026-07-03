@@ -7,6 +7,7 @@ import json
 import logging
 import threading
 import time
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,8 @@ class _LRUCache:
 
 class _RedisBackend:
     """Thin wrapper around redis-py with connection pool. Returns None on any error."""
+
+    _r: Any
 
     def __init__(
         self,
