@@ -1,0 +1,27 @@
+common/events/bus.py
+  s_b9235bb6816b54::t_e19182ceaf7778 1-4,8-9
+  s_b9235bb6816b54::t_7bea1e2ad672ee 10-11
+discovery/pipeline.py
+  s_b9235bb6816b54::t_e0c8c094b06c48 111
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "c081211ba4c4b581deff997a409b7b1d5423920c",
+  "prompts": {},
+  "humans": {
+    "h_367844763c4d75": {
+      "author": "Rahul Bhatt <rahul.bhatt@1mg.com>"
+    }
+  },
+  "sessions": {
+    "s_b9235bb6816b54": {
+      "agent_id": {
+        "tool": "DeputyDev",
+        "id": "451272",
+        "model": "CLAUDE_4_POINT_6_SONNET"
+      },
+      "human_author": "Rahul Bhatt <rahul.bhatt@1mg.com>"
+    }
+  }
+}
