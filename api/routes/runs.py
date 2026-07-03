@@ -1,10 +1,11 @@
 import logging
 import uuid
+
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from api.schemas import (
-    LeadSummary,
     LeadsResponse,
+    LeadSummary,
     RunRequest,
     RunResponse,
     RunStatus,
@@ -88,21 +89,21 @@ def get_run_leads(
         leads = LeadRepository(orm_db).list_by_session(session_id)
 
     if tier:
-        leads = [l for l in leads if l.lead_tier == tier]
+        leads = [lead for lead in leads if lead.lead_tier == tier]
 
     leads = leads[:limit]
     summaries = [
         LeadSummary(
-            domain=l.domain,
-            company_name=l.company_name or "",
-            lead_tier=l.lead_tier or "cold",
-            icp_relevance_score=l.icp_relevance_score or 0.0,
-            tech_stack=l.tech_stack or [],
-            company_summary=l.company_summary or "",
+            domain=lead.domain,
+            company_name=lead.company_name or "",
+            lead_tier=lead.lead_tier or "cold",
+            icp_relevance_score=lead.icp_relevance_score or 0.0,
+            tech_stack=lead.tech_stack or [],
+            company_summary=lead.company_summary or "",
             outreach_subject="",
-            source_url=l.source_url or "",
+            source_url=lead.source_url or "",
         )
-        for l in leads
+        for lead in leads
     ]
     return LeadsResponse(session_id=session_id, total=len(summaries), leads=summaries)
 

@@ -31,9 +31,9 @@ class IcpRefinerAgent(BaseAgent):
 
     def refine(
         self,
-        icp: "IcpDiscoveryQuery",
-        hot_leads: list["ScoredLead"],
-    ) -> "IcpDiscoveryQuery":
+        icp: IcpDiscoveryQuery,
+        hot_leads: list[ScoredLead],
+    ) -> IcpDiscoveryQuery:
         """
         Enrich ``icp`` with common signals extracted from ``hot_leads``.
 
@@ -44,7 +44,7 @@ class IcpRefinerAgent(BaseAgent):
             return icp
 
         # Top 5 common tech not yet required
-        tech_counts = Counter(t for l in hot_leads for t in l.tech_stack)
+        tech_counts = Counter(t for lead in hot_leads for t in lead.tech_stack)
         required_lower = {t.lower() for t in icp.technologies.required}
         new_tech = [t for t, _ in tech_counts.most_common(5) if t.lower() not in required_lower]
         if new_tech:
@@ -53,7 +53,7 @@ class IcpRefinerAgent(BaseAgent):
         # Infer industry if ICP had none
         if not icp.target_company.industries:
             ind_counts = Counter(
-                ind for l in hot_leads for ind in getattr(l, "industry_signals", [])
+                ind for lead in hot_leads for ind in getattr(lead, "industry_signals", [])
             )
             top_industries = [ind for ind, _ in ind_counts.most_common(3)]
             icp.target_company.industries = top_industries

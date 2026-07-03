@@ -129,7 +129,6 @@ class LeadScorerAgent(BaseAgent):
         # Rule-based tier as the safe default
         tier = _rule_tier(enriched_lead.icp_relevance_score, self._hot_t, self._warm_t)
 
-        contact = _build_contact(enriched_lead)
         decision_makers = _build_decision_makers(enriched_lead, self._icp)
         company_summary = ""
         why_reach_out = ""

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import csv
 import json
+from pathlib import Path
 import sys
 import time
-from collections import Counter
-from pathlib import Path
 
 
 def _parse_args() -> argparse.Namespace:
@@ -88,7 +88,7 @@ def main() -> int:
     RateLimiterRegistry.configure(cfg.rate_limits.to_dict())
 
     # Event bus
-    from common.events import EventBus, LoggingObserver, MetricsObserver, ConsoleObserver
+    from common.events import ConsoleObserver, EventBus, LoggingObserver, MetricsObserver
 
     bus = EventBus()
     metrics = MetricsObserver()
@@ -123,7 +123,7 @@ def main() -> int:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
 
-    from services import PipelineService, PersistenceService
+    from services import PersistenceService, PipelineService
 
     svc = PipelineService(cfg, bus=bus, cache=cache)
     run = svc.run(query, session_id=args.session_id)
@@ -217,7 +217,7 @@ def _write_csv(leads, path: str) -> None:
 
 
 def _print_summary(leads, pipeline_result, wall_ms, session_id, metrics) -> None:
-    tiers = Counter(l.lead_tier.value for l in leads)
+    tiers = Counter(lead.lead_tier.value for lead in leads)
     print()
     print("=" * 65)
     print("  AI LEAD GENERATION — COMPLETE")
@@ -239,7 +239,7 @@ def _print_summary(leads, pipeline_result, wall_ms, session_id, metrics) -> None
     )
     print("=" * 65)
 
-    hot_warm = [l for l in leads if l.lead_tier.value in ("hot", "warm")]
+    hot_warm = [lead for lead in leads if lead.lead_tier.value in ("hot", "warm")]
     if hot_warm:
         print(f"\n  Top {min(10, len(hot_warm))} leads:\n")
         for i, lead in enumerate(hot_warm[:10], 1):

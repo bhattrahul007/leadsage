@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import logging
-import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+import logging
 from typing import ClassVar, Literal, TypedDict
 from urllib.parse import urlparse
 
@@ -147,7 +146,7 @@ class BaseSearchProvider(ABC):
 
         ring = KeyRing(self.env_key)
         if not ring.available:
-            raise EnvironmentError(
+            raise OSError(
                 f"[{self.name}] API key missing. Set the {self.env_key!r} environment variable."
             )
         return ring.next_key()
@@ -223,8 +222,6 @@ class BaseSearchProvider(ABC):
 
         return _do()
 
-        raise last_exc
-
     def _build_result(
         self,
         *,
@@ -265,4 +262,4 @@ def _extract_domain(url: str) -> str:
 
 def _utc_now() -> str:
     """Return current UTC time as ISO 8601 string."""
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()

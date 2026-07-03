@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from common.schemas.icp_request import IcpDiscoveryQuery
 from common.email_validator import filter_valid
-from discovery.retreivers.base import SearchResult
+from common.schemas.icp_request import IcpDiscoveryQuery
 from discovery.crawler import CrawledPage
-
+from discovery.retreivers.base import SearchResult
 
 _FUNDING_KWS = frozenset(
     {
@@ -195,7 +193,7 @@ class LeadEnricher:
 
         enricher = LeadEnricher(icp, EnricherConfig(min_score=0.2))
         leads = enricher.enrich_many(list(zip(crawled_pages, search_results)))
-        leads.sort(key=lambda l: -l.icp_relevance_score)
+        leads.sort(key=lambda lead: -lead.icp_relevance_score)
     """
 
     def __init__(
@@ -313,7 +311,7 @@ class LeadEnricher:
             lead = self.enrich(page, result)
             if lead is not None:
                 leads.append(lead)
-        leads.sort(key=lambda l: -l.icp_relevance_score)
+        leads.sort(key=lambda lead: -lead.icp_relevance_score)
         return leads
 
     def _extract_tech(self, page: CrawledPage, text_lower: str) -> list[str]:
@@ -430,7 +428,7 @@ def _freshness_multiplier(published_date: str | None) -> float:
         return 0.85  # unknown date — slight penalty
     try:
         date = datetime.fromisoformat(published_date.replace("Z", "+00:00"))
-        age_days = (datetime.now(timezone.utc) - date).days
+        age_days = (datetime.now(UTC) - date).days
         if age_days < 30:
             return 1.0
         if age_days < 90:

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime
+from enum import StrEnum
 import json
 import logging
 import threading
-import uuid
-from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
 from typing import TYPE_CHECKING, Any, Literal
+import uuid
 
 if TYPE_CHECKING:
     from common.context.window import SummaryBufferWindow
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class SessionStatus(str, Enum):
+class SessionStatus(StrEnum):
     CREATED = "created"
     RUNNING = "running"
     PARTIAL = "partial"
@@ -29,13 +29,13 @@ class ConversationMessage:
     content: str
     agent_name: str | None = None
     model_name: str | None = None
-    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def to_dict(self) -> dict:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, d: dict) -> "ConversationMessage":
+    def from_dict(cls, d: dict) -> ConversationMessage:
         return cls(**{k: v for k, v in d.items() if k in cls.__dataclass_fields__})
 
 
@@ -44,8 +44,8 @@ class Session:
     id: str
     query: str
     status: SessionStatus = SessionStatus.CREATED
-    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
+    updated_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     completed_at: str | None = None
 
     total_leads: int = 0
@@ -66,7 +66,7 @@ class Session:
         return d
 
     @classmethod
-    def from_dict(cls, d: dict) -> "Session":
+    def from_dict(cls, d: dict) -> Session:
         d = dict(d)
         d["status"] = SessionStatus(d.get("status", "created"))
         return cls(**{k: v for k, v in d.items() if k in cls.__dataclass_fields__})
@@ -134,7 +134,7 @@ class SessionManager:
             if hasattr(session, key):
                 setattr(session, key, value)
 
-        session.updated_at = datetime.now(timezone.utc).isoformat()
+        session.updated_at = datetime.now(UTC).isoformat()
         self._save(session)
         return session
 
@@ -142,7 +142,7 @@ class SessionManager:
         self.update(
             session_id,
             status=SessionStatus.COMPLETED,
-            completed_at=datetime.now(timezone.utc).isoformat(),
+            completed_at=datetime.now(UTC).isoformat(),
             **kwargs,
         )
 
@@ -275,7 +275,7 @@ class SessionManager:
         if self._cache:
             self._cache.set_session_state(session.id, session.to_dict(), ttl=self._ttl)
 
-    def attach_context_window(self, session_id: str, window: "SummaryBufferWindow") -> None:
+    def attach_context_window(self, session_id: str, window: SummaryBufferWindow) -> None:
         """Wire a SummaryBufferWindow to a session for auto-mirroring."""
         self._context_window[session_id] = window
 
@@ -291,7 +291,7 @@ class SessionManager:
         return self.get_conversation_context(session_id, last_n=10)
 
     @classmethod
-    def from_config(cls, config, cache=None) -> "SessionManager":
+    def from_config(cls, config, cache=None) -> SessionManager:
         return cls(
             cache=cache,
             max_in_memory=config.session.max_sessions_in_memory,

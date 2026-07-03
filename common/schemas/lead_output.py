@@ -1,22 +1,14 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
 
-class LeadTier(str, Enum):
-    """
-    Lead quality tier derived from ICP relevance score + LLM judgement.
-
-    Thresholds are configurable via ``ScoringConfig`` in ``AppConfig``:
-
-    - ``HOT``  — score ≥ hot_threshold (default 0.65)
-    - ``WARM`` — score ≥ warm_threshold (default 0.35)
-    - ``COLD`` — score < warm_threshold
-    """
+class LeadTier(StrEnum):
+    """Lead quality tier: HOT (≥ hot_threshold), WARM (≥ warm_threshold), COLD (below)."""
 
     HOT = "hot"
     WARM = "warm"
@@ -125,7 +117,7 @@ class ScoredLead(BaseModel):
         description="Text snippets from the crawled page that support the score",
     )
 
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     @classmethod
     def from_enriched_lead(
@@ -136,7 +128,7 @@ class ScoredLead(BaseModel):
         why_this_lead: str = "",
         outreach_suggestions: list[OutreachSuggestion] | None = None,
         decision_makers: list[DecisionMaker] | None = None,
-    ) -> "ScoredLead":
+    ) -> ScoredLead:
         """
         Construct a ``ScoredLead`` from an ``EnrichedLead`` + LLM enrichment.
 
