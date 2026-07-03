@@ -92,7 +92,7 @@ class AgentFactory:
 
         from common.llm import create_llm
 
-        llm = create_llm(config.llm, model_name)
+        llm = create_llm(config.llm, model_name, agent_name=agent_name)
 
         logger.debug(
             "Creating agent %s with model=%s role=%s",

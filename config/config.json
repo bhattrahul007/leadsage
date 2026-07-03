@@ -1,12 +1,27 @@
 {
-  "_comment": "AI Lead Generation Agent — complete configuration.",
   "llm": {
     "provider": "ollama",
     "models": {
       "icp_parser":     "qwen2.5:3b",
       "lead_scorer":    "qwen2.5:7b",
       "outreach":       "qwen2.5:7b",
-      "contact_finder": "qwen2.5:3b"
+      "contact_finder": "qwen2.5:3b",
+      "research":       "qwen2.5:7b",
+      "embedder":       "nomic-embed-text"
+    },
+    "per_agent_overrides": {
+      "icp_parser": {
+        "temperature": 0.0,
+        "num_predict": 1024
+      },
+      "lead_scorer": {
+        "temperature": 0.1,
+        "num_predict": 2048
+      },
+      "research": {
+        "temperature": 0.2,
+        "num_predict": 4096
+      }
     },
     "ollama": {
       "base_url":    "http://localhost:11434",
@@ -22,22 +37,79 @@
     },
     "openai": {
       "api_key_env": "OPENAI_API_KEY",
+      "model":       "gpt-4o-mini",
+      "temperature": 0.1,
+      "timeout":     60
+    },
+    "groq": {
+      "api_key_env": "GROQ_API_KEY",
+      "base_url":    "https://api.groq.com/openai/v1",
+      "temperature": 0.1,
+      "timeout":     30
+    },
+    "together": {
+      "api_key_env": "TOGETHER_API_KEY",
+      "base_url":    "https://api.together.xyz/v1",
+      "temperature": 0.1,
+      "timeout":     60
+    },
+    "anthropic": {
+      "api_key_env": "ANTHROPIC_API_KEY",
+      "model":       "claude-3-haiku-20240307",
       "temperature": 0.1,
       "timeout":     60
     }
   },
+
+  "embedding": {
+    "enabled":              false,
+    "provider":             "ollama",
+    "model":                "nomic-embed-text",
+    "dimensions":           768,
+    "batch_size":           32,
+    "cache_embeddings":     true,
+    "similarity_threshold": 0.8,
+    "ollama": {
+      "base_url": "http://localhost:11434"
+    },
+    "openai": {
+      "model":       "text-embedding-3-small",
+      "api_key_env": "OPENAI_API_KEY"
+    }
+  },
+
   "pipeline": {
-    "providers": [],
-    "crawler_type": "requests",
+    "providers":             [],
+    "crawler_type":          "requests",
     "max_results_per_query": 10,
-    "search_workers": 5,
-    "crawl_enabled": true,
-    "max_urls_to_crawl": 30,
-    "crawl_workers": 10,
-    "crawl_timeout": 15,
-    "domain_delay": 0.0,
-    "enrich_enabled": true,
-    "min_lead_score": 0.15,
+    "search_workers":        8,
+    "crawl_enabled":         true,
+    "max_urls_to_crawl":     50,
+    "crawl_workers":         15,
+    "crawl_timeout":         20,
+    "domain_delay":          0.0,
+    "enrich_enabled":        true,
+    "min_lead_score":        0.15,
+    "search_cache_ttl":      3600,
+    "linked_sources": {
+      "enabled":  true,
+      "yc": {
+        "enabled":     true,
+        "max_results": 20
+      },
+      "github": {
+        "enabled":     false,
+        "max_results": 10
+      },
+      "producthunt": {
+        "enabled":     false,
+        "max_results": 10
+      },
+      "crunchbase": {
+        "enabled":     false,
+        "max_results": 15
+      }
+    },
     "skip_domains": [
       "youtube.com", "twitter.com", "x.com", "facebook.com",
       "instagram.com", "tiktok.com", "reddit.com",
@@ -45,15 +117,17 @@
     ],
     "prefer_domains": [
       "crunchbase.com", "glassdoor.com", "builtwith.com",
-      "stackshare.io", "techcrunch.com"
+      "stackshare.io", "techcrunch.com", "ycombinator.com",
+      "producthunt.com", "github.com"
     ]
   },
+
   "proxy": {
-    "enabled": false,
+    "enabled":  false,
     "provider": "none",
     "static": {
-      "proxies": [],
-      "quarantine_seconds": 300
+      "proxies":              [],
+      "quarantine_seconds":   300
     },
     "brightdata": {
       "host":             "brd.superproxy.io",
@@ -71,26 +145,34 @@
       "country":  ""
     }
   },
+
   "session": {
-    "redis_enabled":              true,
-    "redis_url":                  "redis://localhost:6379/0",
-    "lru_maxsize":                512,
-    "crawl_cache_ttl":            86400,
-    "lead_cache_ttl":             604800,
-    "session_ttl":                604800,
-    "max_sessions_in_memory":     50,
-    "memory_lru_text_maxsize":    64,
-    "memory_lru_summary_maxsize": 512
+    "redis_enabled":               true,
+    "redis_url":                   "redis://localhost:6379/0",
+    "redis_pool_size":             20,
+    "redis_socket_timeout":        5,
+    "redis_retry_on_timeout":      true,
+    "lru_maxsize":                 1024,
+    "crawl_cache_ttl":             86400,
+    "lead_cache_ttl":              604800,
+    "session_ttl":                 604800,
+    "max_sessions_in_memory":      100,
+    "memory_lru_text_maxsize":     128,
+    "memory_lru_summary_maxsize":  1024,
+    "conversation_history_limit":  50,
+    "conversation_ttl":            2592000
   },
+
   "scoring": {
     "hot_threshold":           0.65,
     "warm_threshold":          0.35,
     "llm_enabled":             true,
     "max_outreach_points":     5,
-    "max_concurrent_scorers":  5,
+    "max_concurrent_scorers":  8,
     "research_hot_leads":      true,
     "find_contacts":           true
   },
+
   "output": {
     "format":           "json",
     "save_to":          "output/leads.json",
@@ -98,6 +180,7 @@
     "include_evidence": true,
     "pretty_print":     true
   },
+
   "events": {
     "console_observer":  true,
     "logging_observer":  true,
@@ -106,6 +189,7 @@
     "webhook_url":       "",
     "webhook_secret":    ""
   },
+
   "logging": {
     "level":  "INFO",
     "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"

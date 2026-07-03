@@ -56,7 +56,6 @@ def main() -> int:
     wall_start = time.perf_counter()
     args = _parse_args()
 
-    # ── 1. Config ───────────────────────────────────────────────────────
     from common.config import load_config
 
     cfg = load_config(args.config)
@@ -66,6 +65,16 @@ def main() -> int:
         format=cfg.logging.format,
     )
     logger = logging.getLogger("main")
+
+    import common.db as db
+
+    db_url = db.get_database_url()
+    if db_url:
+        try:
+            db.init_engine(db_url)
+            logger.info("Database connected: %s", db_url.split("@")[-1])
+        except Exception as exc:
+            logger.warning("Database unavailable (%s) — continuing without persistence.", exc)
 
     # CLI overrides
     if args.output:
@@ -254,6 +263,10 @@ def main() -> int:
         pipeline_ms=result.pipeline_ms,
     )
 
+    # Persist to Postgres via SQLAlchemy ORM
+    if db.is_available():
+        _persist_results_to_db(session.id, query, top_scored, result)
+
     # ── 11. Output ───────────────────────────────────────────────────────
     Path(cfg.output.save_to).parent.mkdir(parents=True, exist_ok=True)
 
@@ -404,6 +417,85 @@ def _print_summary(leads, pipeline_result, wall_ms, session_id, metrics) -> None
 
     print(f"  Output: {pipeline_result.icp.original_query[:50]}")
     print("=" * 65)
+
+
+def _persist_results_to_db(session_id: str, query: str, scored_leads, pipeline_result) -> None:
+    import common.db as db
+    from common.db.repositories import (
+        SessionRepository, LeadRepository, CompanyRepository,
+        DecisionMakerRepository, PipelineMetricRepository,
+    )
+    from collections import Counter
+
+    tiers = Counter(s.lead_tier.value for s in scored_leads)
+    try:
+        with db.db_session() as orm_db:
+            sess_repo = SessionRepository(orm_db)
+            sess_repo.upsert_or_create(session_id, query, tiers)
+
+            lead_repo = LeadRepository(orm_db)
+            company_repo = CompanyRepository(orm_db)
+            dm_repo = DecisionMakerRepository(orm_db)
+
+            for lead in scored_leads:
+                company_repo.upsert(
+                    domain=lead.domain,
+                    company_name=lead.company_name,
+                    tech_stack=lead.tech_stack,
+                    industry_tags=lead.industry_signals,
+                    linkedin_url=lead.contact_info.linkedin_url,
+                    github_url=lead.contact_info.github_url,
+                    twitter_url=lead.contact_info.twitter_url,
+                    crunchbase_url=lead.contact_info.crunchbase_url,
+                    website=lead.source_url,
+                )
+                lead_record = lead_repo.upsert(
+                    session_id=session_id,
+                    domain=lead.domain,
+                    company_name=lead.company_name,
+                    lead_tier=lead.lead_tier.value,
+                    icp_relevance_score=lead.icp_relevance_score,
+                    tech_score=lead.score_breakdown.technology,
+                    hiring_score=lead.score_breakdown.hiring,
+                    profile_score=lead.score_breakdown.profile,
+                    tech_stack=lead.tech_stack,
+                    hiring_signals=lead.hiring_signals,
+                    outsourcing_signals=lead.outsourcing_signals,
+                    business_events=lead.business_events,
+                    industry_signals=lead.industry_signals,
+                    company_summary=lead.company_summary,
+                    why_this_lead=lead.why_this_lead,
+                    source_url=lead.source_url,
+                    evidence=lead.evidence,
+                )
+                for dm in lead.decision_makers:
+                    try:
+                        dm_repo.upsert(
+                            domain=lead.domain,
+                            title=dm.title,
+                            full_name=dm.name,
+                            email=dm.email,
+                            linkedin_url=dm.linkedin_url,
+                            confidence=dm.confidence,
+                            session_id=session_id,
+                        )
+                    except Exception:
+                        pass
+
+            for metric in pipeline_result.stage_metrics:
+                PipelineMetricRepository(orm_db).log_stage(
+                    session_id=session_id,
+                    stage=metric.stage,
+                    items_in=metric.items_in,
+                    items_out=metric.items_out,
+                    error_count=metric.error_count,
+                    latency_ms=metric.latency_ms,
+                )
+
+            orm_db.commit()
+    except Exception as exc:
+        import logging
+        logging.getLogger("main").warning("DB persist error: %s", exc)
 
 
 def _prompt_query() -> str:

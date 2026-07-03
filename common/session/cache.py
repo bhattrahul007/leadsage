@@ -71,16 +71,34 @@ class _LRUCache:
 
 
 class _RedisBackend:
-    """Thin wrapper around redis-py. Returns None on any error (graceful degradation)."""
+    """Thin wrapper around redis-py with connection pool. Returns None on any error."""
 
-    def __init__(self, url: str) -> None:
+    def __init__(
+        self,
+        url: str,
+        pool_size: int = 20,
+        socket_timeout: int = 5,
+        retry_on_timeout: bool = True,
+    ) -> None:
         try:
             import redis
+            from redis.retry import Retry
+            from redis.backoff import ExponentialBackoff
 
-            self._r = redis.from_url(url, decode_responses=False, socket_timeout=2)
+            retry = Retry(ExponentialBackoff(cap=0.5, base=0.1), retries=3) if retry_on_timeout else None
+            pool = redis.ConnectionPool.from_url(
+                url,
+                max_connections=pool_size,
+                decode_responses=False,
+                socket_timeout=socket_timeout,
+                socket_connect_timeout=socket_timeout,
+                retry=retry,
+                retry_on_timeout=retry_on_timeout,
+            )
+            self._r = redis.Redis(connection_pool=pool)
             self._r.ping()
             self._available = True
-            logger.info("Redis cache connected: %s", url)
+            logger.info("Redis cache connected (pool_size=%d): %s", pool_size, url)
         except Exception as exc:
             self._r = None
             self._available = False
@@ -278,12 +296,21 @@ class LeadCache:
     def from_config(cls, config) -> "LeadCache":
         """Create a ``LeadCache`` from ``AppConfig``."""
         session_cfg = config.session
-        return cls(
-            redis_url=session_cfg.redis_url if session_cfg.redis_enabled else None,
-            lru_maxsize=session_cfg.lru_maxsize,
-            crawl_ttl=session_cfg.crawl_cache_ttl,
-            lead_ttl=session_cfg.lead_cache_ttl,
-        )
+        redis_url = session_cfg.redis_url if session_cfg.redis_enabled else None
+        inst = cls.__new__(cls)
+        inst._lru = _LRUCache(maxsize=session_cfg.lru_maxsize)
+        inst._crawl_ttl = session_cfg.crawl_cache_ttl
+        inst._lead_ttl = session_cfg.lead_cache_ttl
+        if redis_url:
+            inst._redis = _RedisBackend(
+                url=redis_url,
+                pool_size=getattr(session_cfg, "redis_pool_size", 20),
+                socket_timeout=getattr(session_cfg, "redis_socket_timeout", 5),
+                retry_on_timeout=getattr(session_cfg, "redis_retry_on_timeout", True),
+            )
+        else:
+            inst._redis = None
+        return inst
 
 
 # ---------------------------------------------------------------------------

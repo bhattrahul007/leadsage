@@ -13,6 +13,10 @@ logger = logging.getLogger(__name__)
 _DEFAULT_CONFIG_PATH = Path(__file__).parent.parent / "config" / "config.json"
 
 
+# ──────────────────────────────────────────────────────────────────────────────
+# LLM provider configs
+# ──────────────────────────────────────────────────────────────────────────────
+
 class OllamaConfig(BaseModel):
     base_url: str = "http://localhost:11434"
     temperature: float = 0.1
@@ -29,6 +33,7 @@ class OpenAICompatibleConfig(BaseModel):
 
 class OpenAIConfig(BaseModel):
     api_key_env: str = "OPENAI_API_KEY"
+    model: str = "gpt-4o-mini"
     temperature: float = 0.1
     timeout: int = 60
 
@@ -37,53 +42,134 @@ class OpenAIConfig(BaseModel):
         return os.getenv(self.api_key_env)
 
 
+class GroqConfig(BaseModel):
+    api_key_env: str = "GROQ_API_KEY"
+    base_url: str = "https://api.groq.com/openai/v1"
+    temperature: float = 0.1
+    timeout: int = 30
+
+    @property
+    def api_key(self) -> str | None:
+        return os.getenv(self.api_key_env)
+
+
+class TogetherConfig(BaseModel):
+    api_key_env: str = "TOGETHER_API_KEY"
+    base_url: str = "https://api.together.xyz/v1"
+    temperature: float = 0.1
+    timeout: int = 60
+
+    @property
+    def api_key(self) -> str | None:
+        return os.getenv(self.api_key_env)
+
+
+class AnthropicConfig(BaseModel):
+    api_key_env: str = "ANTHROPIC_API_KEY"
+    model: str = "claude-3-haiku-20240307"
+    temperature: float = 0.1
+    timeout: int = 60
+
+    @property
+    def api_key(self) -> str | None:
+        return os.getenv(self.api_key_env)
+
+
+class PerAgentOverride(BaseModel):
+    temperature: float | None = None
+    num_predict: int | None = None
+    timeout: int | None = None
+
+
 class LLMModelsConfig(BaseModel):
     icp_parser: str = "qwen2.5:3b"
     lead_scorer: str = "qwen2.5:7b"
     outreach: str = "qwen2.5:7b"
     contact_finder: str = "qwen2.5:3b"
+    research: str = "qwen2.5:7b"
+    embedder: str = "nomic-embed-text"
 
 
 class LLMConfig(BaseModel):
-    provider: Literal["ollama", "openai", "openai_compatible"] = "ollama"
+    provider: Literal["ollama", "openai", "openai_compatible", "groq", "together", "anthropic"] = "ollama"
     models: LLMModelsConfig = Field(default_factory=LLMModelsConfig)
+    per_agent_overrides: dict[str, PerAgentOverride] = Field(default_factory=dict)
     ollama: OllamaConfig = Field(default_factory=OllamaConfig)
     openai_compatible: OpenAICompatibleConfig = Field(default_factory=OpenAICompatibleConfig)
     openai: OpenAIConfig = Field(default_factory=OpenAIConfig)
+    groq: GroqConfig = Field(default_factory=GroqConfig)
+    together: TogetherConfig = Field(default_factory=TogetherConfig)
+    anthropic: AnthropicConfig = Field(default_factory=AnthropicConfig)
+
+    def get_agent_override(self, agent_name: str) -> PerAgentOverride:
+        return self.per_agent_overrides.get(agent_name, PerAgentOverride())
+
+
+
+class EmbeddingOllamaConfig(BaseModel):
+    base_url: str = "http://localhost:11434"
+
+
+class EmbeddingOpenAIConfig(BaseModel):
+    model: str = "text-embedding-3-small"
+    api_key_env: str = "OPENAI_API_KEY"
+
+    @property
+    def api_key(self) -> str | None:
+        return os.getenv(self.api_key_env)
+
+
+class EmbeddingConfig(BaseModel):
+    enabled: bool = False
+    provider: Literal["ollama", "openai"] = "ollama"
+    model: str = "nomic-embed-text"
+    dimensions: int = 768
+    batch_size: int = 32
+    cache_embeddings: bool = True
+    similarity_threshold: float = 0.8
+    ollama: EmbeddingOllamaConfig = Field(default_factory=EmbeddingOllamaConfig)
+    openai: EmbeddingOpenAIConfig = Field(default_factory=EmbeddingOpenAIConfig)
+
+
+class LinkedSourceSettings(BaseModel):
+    enabled: bool = True
+    max_results: int = 20
+
+
+class LinkedSourcesConfig(BaseModel):
+    enabled: bool = True
+    yc: LinkedSourceSettings = Field(default_factory=lambda: LinkedSourceSettings(enabled=True, max_results=20))
+    github: LinkedSourceSettings = Field(default_factory=lambda: LinkedSourceSettings(enabled=False, max_results=10))
+    producthunt: LinkedSourceSettings = Field(default_factory=lambda: LinkedSourceSettings(enabled=False, max_results=10))
+    crunchbase: LinkedSourceSettings = Field(default_factory=lambda: LinkedSourceSettings(enabled=False, max_results=15))
 
 
 class PipelineSettings(BaseModel):
     providers: list[str] = Field(default_factory=list)
     crawler_type: str = "requests"
     max_results_per_query: int = 10
-    search_workers: int = 5
+    search_workers: int = 8
     crawl_enabled: bool = True
-    max_urls_to_crawl: int = 30
-    crawl_workers: int = 10
-    crawl_timeout: int = 15
+    max_urls_to_crawl: int = 50
+    crawl_workers: int = 15
+    crawl_timeout: int = 20
     domain_delay: float = 0.0
     enrich_enabled: bool = True
     min_lead_score: float = 0.15
+    search_cache_ttl: int = 3600
+    linked_sources: LinkedSourcesConfig = Field(default_factory=LinkedSourcesConfig)
     skip_domains: list[str] = Field(
         default_factory=lambda: [
-            "youtube.com",
-            "twitter.com",
-            "x.com",
-            "facebook.com",
-            "instagram.com",
-            "tiktok.com",
-            "reddit.com",
-            "wikipedia.org",
-            "linkedin.com",
+            "youtube.com", "twitter.com", "x.com", "facebook.com",
+            "instagram.com", "tiktok.com", "reddit.com",
+            "wikipedia.org", "linkedin.com",
         ]
     )
     prefer_domains: list[str] = Field(
         default_factory=lambda: [
-            "crunchbase.com",
-            "glassdoor.com",
-            "builtwith.com",
-            "stackshare.io",
-            "techcrunch.com",
+            "crunchbase.com", "glassdoor.com", "builtwith.com",
+            "stackshare.io", "techcrunch.com", "ycombinator.com",
+            "producthunt.com", "github.com",
         ]
     )
 
@@ -123,7 +209,6 @@ class ProxyConfig(BaseModel):
     smartproxy: SmartProxySettings = Field(default_factory=SmartProxySettings)
 
     def get_provider_kwargs(self, name: str) -> dict[str, Any]:
-        """Return the kwargs dict for the specified provider."""
         if name == "static":
             return {
                 "proxy_urls": self.static.proxies,
@@ -154,13 +239,18 @@ class ProxyConfig(BaseModel):
 class SessionConfig(BaseModel):
     redis_enabled: bool = True
     redis_url: str = "redis://localhost:6379/0"
-    lru_maxsize: int = 512
+    redis_pool_size: int = 20
+    redis_socket_timeout: int = 5
+    redis_retry_on_timeout: bool = True
+    lru_maxsize: int = 1024
     crawl_cache_ttl: int = 86_400
     lead_cache_ttl: int = 604_800
     session_ttl: int = 604_800
-    max_sessions_in_memory: int = 50
-    memory_lru_text_maxsize: int = 64
-    memory_lru_summary_maxsize: int = 512
+    max_sessions_in_memory: int = 100
+    memory_lru_text_maxsize: int = 128
+    memory_lru_summary_maxsize: int = 1024
+    conversation_history_limit: int = 50
+    conversation_ttl: int = 2_592_000
 
 
 class ScoringConfig(BaseModel):
@@ -168,7 +258,7 @@ class ScoringConfig(BaseModel):
     warm_threshold: float = 0.35
     llm_enabled: bool = True
     max_outreach_points: int = 5
-    max_concurrent_scorers: int = 5
+    max_concurrent_scorers: int = 8
     research_hot_leads: bool = True
     find_contacts: bool = True
 
@@ -202,6 +292,7 @@ class LoggingConfig(BaseModel):
 
 class AppConfig(BaseModel):
     llm: LLMConfig = Field(default_factory=LLMConfig)
+    embedding: EmbeddingConfig = Field(default_factory=EmbeddingConfig)
     pipeline: PipelineSettings = Field(default_factory=PipelineSettings)
     proxy: ProxyConfig = Field(default_factory=ProxyConfig)
     session: SessionConfig = Field(default_factory=SessionConfig)
@@ -212,14 +303,6 @@ class AppConfig(BaseModel):
 
 
 def load_config(path: str | Path | None = None) -> AppConfig:
-    """
-    Load ``AppConfig`` from a JSON file.
-
-    Missing file → pure defaults (warning logged).
-    Missing keys → filled by Pydantic defaults.
-    ``_comment*`` keys → stripped silently.
-    Invalid values → Pydantic raises ``ValidationError``.
-    """
     config_path = Path(path) if path else _DEFAULT_CONFIG_PATH
 
     if not config_path.exists():
