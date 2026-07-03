@@ -1,0 +1,76 @@
+common/session/cache.py
+  s_b9235bb6816b54::t_9cf2529e4bf745 10,75-76
+agents/icp_parser.py
+  s_b9235bb6816b54::t_23ea04f8710850 53,55,71-73
+  s_b9235bb6816b54::t_57a88af7eb1e5a 8,184,259
+discovery/query_planner.py
+  s_b9235bb6816b54::t_72577b71ecf855 74,77
+  s_b9235bb6816b54::t_080b1458cd8830 447
+common/db/models.py
+  s_b9235bb6816b54::t_cffff319f466ee 4,20,27,34-41,44-56,59-62,65,68,71,74,82-93,95,101-115,117,123-140,142,148-176,180-181,189-218,222-226,234-254,261-263,269-284,286,292-309,311,317-330,332-334,340-361
+discovery/crawlers/playwright_crawler.py
+  s_b9235bb6816b54::t_551b00c1bdfebc 174
+common/llm/factory.py
+  s_b9235bb6816b54::t_f394e8e619ff3d 21,24,28,33-36,39,49-52,56,60-61,69-70,73,75-77,81,84,94-95,98,100-102,106,110,119-120,123,125-127,131,135,144-145,148,150-152,156,159
+pyproject.toml
+  s_b9235bb6816b54::t_138f3f35e9426e 86-88
+  h_367844763c4d75 15,19,22,26,30,34,37,63
+  s_b9235bb6816b54::t_ea9854e4fa0513 83
+common/llm/anthropic.py
+  s_b9235bb6816b54::t_5b033c4e676bed 44-45
+  s_b9235bb6816b54::t_f5170b40c4fc02 48-49,54,56
+  s_b9235bb6816b54::t_eae0105e077e8d 30-31,35
+common/llm/openai_compat.py
+  s_b9235bb6816b54::t_74ece8b3585d56 68-69,72-73,80-82
+services/pipeline_service.py
+  s_b9235bb6816b54::t_cf8fd16d2ebac7 57-58,60
+  s_b9235bb6816b54::t_e80b5691cc0e19 7
+  s_b9235bb6816b54::t_a5e44a738debc9 145-149,165,167-169
+common/llm/ollama.py
+  s_b9235bb6816b54::t_a6afb43eef475c 58-59,62-63,70-72
+agents/contact_finder.py
+  s_b9235bb6816b54::t_dff00b201dce15 71,73-74
+discovery/pipeline.py
+  s_b9235bb6816b54::t_97fc7e641bc373 215-216
+discovery/retreivers/base.py
+  s_b9235bb6816b54::t_5d035445ab13cc 233,246
+  s_b9235bb6816b54::t_0b0f62617bbca9 8
+common/retry.py
+  s_b9235bb6816b54::t_f3a401b2b28908 9,304,307-308,339,342-343
+agents/lead_scorer.py
+  s_b9235bb6816b54::t_ea023e31fd6fbb 108,110-111
+  s_b9235bb6816b54::t_5dd67d7ae1070b 141,143
+  s_b9235bb6816b54::t_e17f2747ffb068 5
+agents/research.py
+  s_b9235bb6816b54::t_96274081791d44 88,90-91
+discovery/crawlers/base.py
+  s_b9235bb6816b54::t_c2ba59105954e9 8,16-17
+  s_b9235bb6816b54::t_86f09b7c3def8d 18
+discovery/crawlers/requests_crawler.py
+  s_b9235bb6816b54::t_ad974b39e5ecbc 112
+IMPROVEMENTS.md
+  s_b9235bb6816b54::t_d924a78b854e58 1-1340
+agents/base.py
+  s_b9235bb6816b54::t_29bd3ec5a4898c 33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "437119b3f87b784329d911b4c4e2e06506d75a18",
+  "prompts": {},
+  "humans": {
+    "h_367844763c4d75": {
+      "author": "Rahul Bhatt <rahul.bhatt@1mg.com>"
+    }
+  },
+  "sessions": {
+    "s_b9235bb6816b54": {
+      "agent_id": {
+        "tool": "DeputyDev",
+        "id": "451272",
+        "model": "CLAUDE_4_POINT_6_SONNET"
+      },
+      "human_author": "Rahul Bhatt <rahul.bhatt@1mg.com>"
+    }
+  }
+}
