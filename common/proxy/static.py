@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import threading
 import time
-from itertools import cycle
 
 from common.proxy.base import BaseProxyProvider, ProxyDict
 from common.proxy.factory import register_proxy_provider

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
@@ -38,7 +38,7 @@ class BaseLLM(ABC):
         ...
 
     @abstractmethod
-    def invoke_structured(self, prompt: str, schema: Type["BaseModel"]) -> "BaseModel":
+    def invoke_structured(self, prompt: str, schema: type[BaseModel]) -> BaseModel:
         """
         Send ``prompt`` and return a validated instance of ``schema``.
 

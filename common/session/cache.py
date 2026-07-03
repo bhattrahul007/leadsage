@@ -1,14 +1,12 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 import gzip
 import hashlib
 import json
 import logging
 import threading
 import time
-from collections import OrderedDict
-from datetime import datetime, timezone
-from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -82,8 +80,8 @@ class _RedisBackend:
     ) -> None:
         try:
             import redis
-            from redis.retry import Retry
             from redis.backoff import ExponentialBackoff
+            from redis.retry import Retry
 
             retry = (
                 Retry(ExponentialBackoff(cap=0.5, base=0.1), retries=3)
@@ -189,7 +187,6 @@ class LeadCache:
 
     def get_crawled_page(self, url: str):
         """Return a cached ``CrawledPage`` or ``None``."""
-        from discovery.crawler import CrawledPage, ExtractedMeta  # lazy import
 
         key = _crawl_key(url)
         data = self._get(key)
@@ -297,7 +294,7 @@ class LeadCache:
     # ------------------------------------------------------------------
 
     @classmethod
-    def from_config(cls, config) -> "LeadCache":
+    def from_config(cls, config) -> LeadCache:
         """Create a ``LeadCache`` from ``AppConfig``."""
         session_cfg = config.session
         redis_url = session_cfg.redis_url if session_cfg.redis_enabled else None

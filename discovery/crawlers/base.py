@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from discovery.crawler import CrawledPage
     from common.proxy.base import BaseProxyProvider, ProxyDict
+    from discovery.crawler import CrawledPage
 
 
 class BaseCrawler(ABC):
@@ -17,8 +17,8 @@ class BaseCrawler(ABC):
     def crawl(
         self,
         url: str,
-        proxy: "ProxyDict | None" = None,
-    ) -> "CrawledPage":
+        proxy: ProxyDict | None = None,
+    ) -> CrawledPage:
         """
         Fetch and parse a single URL.
 
@@ -38,8 +38,8 @@ class BaseCrawler(ABC):
         self,
         urls: list[str],
         max_workers: int = 10,
-        proxy_provider: "BaseProxyProvider | None" = None,
-    ) -> list["CrawledPage"]:
+        proxy_provider: BaseProxyProvider | None = None,
+    ) -> list[CrawledPage]:
         """
         Crawl multiple URLs concurrently.
 

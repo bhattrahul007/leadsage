@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import itertools
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 
 from common.schemas.icp_request import IcpDiscoveryQuery
-
 
 SignalType = Literal[
     "company_profile",
@@ -61,7 +59,7 @@ class QueryPlan:
 
     icp: IcpDiscoveryQuery
     queries: list[PlannedQuery]
-    planned_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    planned_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     # ------------------------------------------------------------------
     # Accessors

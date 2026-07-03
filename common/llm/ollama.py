@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Type
 
 from pydantic import BaseModel
 
@@ -58,7 +57,7 @@ class OllamaLLM(BaseLLM):
         response = self._llm.invoke(prompt)
         return response.content if hasattr(response, "content") else str(response)
 
-    def invoke_structured(self, prompt: str, schema: Type[BaseModel]) -> BaseModel:
+    def invoke_structured(self, prompt: str, schema: type[BaseModel]) -> BaseModel:
         structured = self._llm.with_structured_output(schema)
         result = structured.invoke(prompt)
         if result is None:

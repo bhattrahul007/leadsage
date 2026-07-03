@@ -5,7 +5,6 @@ from typing import Any
 
 from agents.base import BaseAgent
 from agents.factory import register_agent
-from common.llm.base import BaseLLM
 from common.schemas.icp_request import IcpDiscoveryQuery
 
 logger = logging.getLogger(__name__)

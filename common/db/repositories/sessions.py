@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 import uuid
-from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -30,7 +30,7 @@ class SessionRepository(BaseRepository[SessionModel]):
         record = self.get(session_id)
         if record:
             record.status = "running"
-            record.updated_at = datetime.now(timezone.utc)
+            record.updated_at = datetime.now(UTC)
             self._db.flush()
         return record
 
@@ -46,8 +46,8 @@ class SessionRepository(BaseRepository[SessionModel]):
         record = self.get(session_id)
         if record:
             record.status = "completed"
-            record.completed_at = datetime.now(timezone.utc)
-            record.updated_at = datetime.now(timezone.utc)
+            record.completed_at = datetime.now(UTC)
+            record.updated_at = datetime.now(UTC)
             record.total_leads = total_leads
             record.hot_count = hot_count
             record.warm_count = warm_count
@@ -61,7 +61,7 @@ class SessionRepository(BaseRepository[SessionModel]):
         if record:
             record.status = "failed"
             record.error = error
-            record.updated_at = datetime.now(timezone.utc)
+            record.updated_at = datetime.now(UTC)
             self._db.flush()
         return record
 
@@ -73,7 +73,7 @@ class SessionRepository(BaseRepository[SessionModel]):
             record.hot_count = tier_counts.get("hot", 0)
             record.warm_count = tier_counts.get("warm", 0)
             record.cold_count = tier_counts.get("cold", 0)
-            record.updated_at = datetime.now(timezone.utc)
+            record.updated_at = datetime.now(UTC)
             self._db.flush()
             return record
         return self.create(session_id, query)

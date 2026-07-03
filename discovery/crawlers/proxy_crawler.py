@@ -57,7 +57,7 @@ class ProxiedCrawler(BaseCrawler):
     def __init__(
         self,
         inner: BaseCrawler,
-        proxy_provider: "BaseProxyProvider",
+        proxy_provider: BaseProxyProvider,
         max_retries: int = 2,
     ) -> None:
         self._inner = inner
@@ -71,7 +71,7 @@ class ProxiedCrawler(BaseCrawler):
     def crawl(
         self,
         url: str,
-        proxy: "ProxyDict | None" = None,
+        proxy: ProxyDict | None = None,
     ) -> CrawledPage:
         """
         Crawl ``url`` with automatic proxy acquisition and rotation.
@@ -97,7 +97,7 @@ class ProxiedCrawler(BaseCrawler):
         self,
         urls: list[str],
         max_workers: int = 10,
-        proxy_provider: "BaseProxyProvider | None" = None,
+        proxy_provider: BaseProxyProvider | None = None,
     ) -> list[CrawledPage]:
         """
         Delegate to inner crawler's ``crawl_many()`` using this crawler's

@@ -42,12 +42,14 @@ class ProxyProviderFactory:
     @staticmethod
     def _ensure_registered() -> None:
         # Import triggers @register_proxy_provider decorators
-        from common.proxy import brightdata  # noqa: F401
-        from common.proxy import smartproxy  # noqa: F401
-        from common.proxy import static  # noqa: F401
+        from common.proxy import (
+            brightdata,  # noqa: F401
+            smartproxy,  # noqa: F401
+            static,  # noqa: F401
+        )
 
     @classmethod
-    def create(cls, proxy_config: "ProxyConfig") -> BaseProxyProvider | None:
+    def create(cls, proxy_config: ProxyConfig) -> BaseProxyProvider | None:
         """
         Create a ``BaseProxyProvider`` from config.
 

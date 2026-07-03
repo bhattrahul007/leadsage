@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import concurrent.futures
+from datetime import UTC, datetime
 import logging
-from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
-from discovery.crawler import CrawlerConfig, ExtractedMeta, WebCrawler
-from discovery.crawler import CrawledPage
+from discovery.crawler import CrawledPage, CrawlerConfig, ExtractedMeta, WebCrawler
 from discovery.crawlers.base import BaseCrawler
 from discovery.crawlers.factory import register_crawler
 
@@ -40,7 +39,7 @@ class RequestsCrawler(BaseCrawler):
     def crawl(
         self,
         url: str,
-        proxy: "ProxyDict | None" = None,
+        proxy: ProxyDict | None = None,
     ) -> CrawledPage:
         """
         Fetch and parse ``url``.
@@ -57,7 +56,7 @@ class RequestsCrawler(BaseCrawler):
         self,
         urls: list[str],
         max_workers: int = 10,
-        proxy_provider: "BaseProxyProvider | None" = None,
+        proxy_provider: BaseProxyProvider | None = None,
     ) -> list[CrawledPage]:
         """Crawl multiple URLs concurrently, optionally with per-URL proxies."""
         if not urls:
@@ -92,7 +91,7 @@ class RequestsCrawler(BaseCrawler):
 
     # ------------------------------------------------------------------
 
-    def _crawl_with_proxy(self, url: str, proxy: "ProxyDict") -> CrawledPage:
+    def _crawl_with_proxy(self, url: str, proxy: ProxyDict) -> CrawledPage:
         """
         Inject proxy into the requests session for a single call.
 
@@ -100,13 +99,13 @@ class RequestsCrawler(BaseCrawler):
         Since this may be called from multiple threads, we use a fresh
         session per proxy-injected call to stay thread-safe.
         """
-        import requests
         import time
-        from common.retry import RetryConfig, retry_with_config
+
+        import requests
 
         cfg = self._config
         start = time.perf_counter()
-        fetched_at = datetime.now(timezone.utc).isoformat()
+        fetched_at = datetime.now(UTC).isoformat()
 
         session = requests.Session()
         session.headers.update({"User-Agent": cfg.user_agent})
@@ -134,7 +133,7 @@ class RequestsCrawler(BaseCrawler):
             html = raw.decode("utf-8", errors="replace")
             final_url = resp.url
 
-            from discovery.crawler import _PageParser, _build_meta
+            from discovery.crawler import _build_meta, _PageParser
 
             parser = _PageParser(final_url, max_links=cfg.max_links)
             parser.feed(html)
@@ -170,7 +169,7 @@ def _error_page(url: str, error: str, latency_ms: float = 0.0) -> CrawledPage:
         text_content="",
         meta=ExtractedMeta(),
         links=[],
-        crawled_at=datetime.now(timezone.utc).isoformat(),
+        crawled_at=datetime.now(UTC).isoformat(),
         latency_ms=latency_ms,
         success=False,
         error=error,

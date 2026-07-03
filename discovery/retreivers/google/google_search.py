@@ -33,7 +33,7 @@ class GoogleSearch(BaseSearchProvider):
         super().__init__(query, config)
         self.cx_key = os.getenv(self.cx_env_key)
         if not self.cx_key:
-            raise EnvironmentError(
+            raise OSError(
                 f"[google] CX key missing. Set the {self.cx_env_key!r} environment variable."
             )
 

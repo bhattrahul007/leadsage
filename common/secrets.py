@@ -50,7 +50,7 @@ class KeyRing:
 
     def next_key(self) -> str:
         if not self._keys:
-            raise EnvironmentError("No API keys loaded. Check your environment variables.")
+            raise OSError("No API keys loaded. Check your environment variables.")
         with self._lock:
             return next(self._cycle)
 

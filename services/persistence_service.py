@@ -17,7 +17,7 @@ class PersistenceService:
     from CLI, API, or a background worker after the run completes.
     """
 
-    def save(self, run: "RunResult") -> bool:
+    def save(self, run: RunResult) -> bool:
         import common.db as db
 
         if not db.is_available():
@@ -29,14 +29,14 @@ class PersistenceService:
             logger.warning("DB persist failed: %s", exc)
             return False
 
-    def _persist(self, run: "RunResult") -> None:
+    def _persist(self, run: RunResult) -> None:
         import common.db as db
         from common.db.repositories import (
-            SessionRepository,
-            LeadRepository,
             CompanyRepository,
             DecisionMakerRepository,
+            LeadRepository,
             PipelineMetricRepository,
+            SessionRepository,
         )
 
         with db.db_session() as orm_db:

@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-import logging
-import time
 from collections import Counter
 from dataclasses import dataclass, field
+import logging
+import time
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from common.config import AppConfig
     from common.events.bus import EventBus
     from common.session.cache import LeadCache
-    from common.session.manager import Session
-    from common.schemas.lead_output import ScoredLead
     from discovery.pipeline import PipelineResult
 
 logger = logging.getLogger(__name__)
@@ -22,7 +20,7 @@ class RunResult:
     session_id: str
     query: str
     scored_leads: list  # list[ScoredLead]
-    pipeline_result: "PipelineResult"
+    pipeline_result: PipelineResult
     wall_ms: float
     tier_counts: dict[str, int] = field(default_factory=dict)
 
@@ -37,9 +35,9 @@ class PipelineService:
 
     def __init__(
         self,
-        config: "AppConfig",
-        bus: "EventBus | None" = None,
-        cache: "LeadCache | None" = None,
+        config: AppConfig,
+        bus: EventBus | None = None,
+        cache: LeadCache | None = None,
     ) -> None:
         self._cfg = config
         self._bus = bus
@@ -49,8 +47,8 @@ class PipelineService:
         wall_start = time.perf_counter()
         cfg = self._cfg
 
-        from common.session import SessionManager
         from agents import AgentFactory
+        from common.session import SessionManager
 
         sess_mgr = SessionManager.from_config(cfg, cache=self._cache)
         session = sess_mgr.get_or_create(query, session_id=session_id)
@@ -72,7 +70,7 @@ class PipelineService:
 
             proxy_provider = ProxyProviderFactory.create(cfg.proxy)
 
-        from discovery.pipeline import DiscoveryPipeline, PipelineConfig
+        from discovery.pipeline import DiscoveryPipeline
 
         pipeline = DiscoveryPipeline(
             config=_make_pipe_config(cfg),
@@ -135,9 +133,9 @@ class PipelineService:
             tier_counts=dict(tier_counts),
         )
 
-    def _run_research(self, session, scored: list, result: "PipelineResult") -> None:
-        from common.session import MemoryManager
+    def _run_research(self, session, scored: list, result: PipelineResult) -> None:
         from agents import AgentFactory
+        from common.session import MemoryManager
 
         hot = [s for s in scored if s.lead_tier.value == "hot"]
         if not hot:
@@ -156,7 +154,7 @@ class PipelineService:
                 lead.why_this_lead = profile.pitch_angle
             mem.store_summary(session.id, lead.source_url, profile.description)
 
-    def _run_contact_finding(self, session, scored: list, result: "PipelineResult") -> None:
+    def _run_contact_finding(self, session, scored: list, result: PipelineResult) -> None:
         from agents import AgentFactory
 
         contact_agent = AgentFactory.create(
@@ -187,7 +185,7 @@ class PipelineService:
             )
 
 
-def _make_pipe_config(cfg: "AppConfig"):
+def _make_pipe_config(cfg: AppConfig):
     from discovery.pipeline import PipelineConfig
 
     p = cfg.pipeline

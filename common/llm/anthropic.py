@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING
 
 from common.llm.base import BaseLLM
 
@@ -41,7 +41,7 @@ class AnthropicLLM(BaseLLM):
         response = self._llm.invoke([HumanMessage(content=prompt)])
         return str(response.content)
 
-    def invoke_structured(self, prompt: str, schema: Type["BaseModel"]) -> "BaseModel":
+    def invoke_structured(self, prompt: str, schema: type[BaseModel]) -> BaseModel:
         from langchain_core.messages import HumanMessage
 
         structured = self._llm.with_structured_output(schema)

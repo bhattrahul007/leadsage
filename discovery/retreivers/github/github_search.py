@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 
-from discovery.retreivers.base import BaseSearchProvider, SearchConfig, SearchResult
+from discovery.retreivers.base import BaseSearchProvider, SearchResult
 from discovery.retreivers.registry import register_search_engine
 
 logger = logging.getLogger(__name__)

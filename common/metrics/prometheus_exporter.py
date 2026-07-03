@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 def _get_metrics():
     """Lazy import to avoid hard dependency on prometheus_client."""
     try:
-        from prometheus_client import Counter, Histogram, Gauge
+        from prometheus_client import Counter, Gauge, Histogram
 
         return Counter, Histogram, Gauge
     except ImportError:
@@ -54,11 +54,11 @@ class PrometheusObserver(BaseObserver):
 
     def subscribes_to(self) -> list[type]:
         from common.events.events import (
-            LeadScored,
-            CrawlCompleted,
-            SearchCompleted,
-            PipelineCompleted,
             CacheHit,
+            CrawlCompleted,
+            LeadScored,
+            PipelineCompleted,
+            SearchCompleted,
         )
 
         return [LeadScored, CrawlCompleted, SearchCompleted, PipelineCompleted, CacheHit]
@@ -67,11 +67,11 @@ class PrometheusObserver(BaseObserver):
         if Counter is None:
             return  # prometheus_client not installed
         from common.events.events import (
-            LeadScored,
-            CrawlCompleted,
-            SearchCompleted,
-            PipelineCompleted,
             CacheHit,
+            CrawlCompleted,
+            LeadScored,
+            PipelineCompleted,
+            SearchCompleted,
         )
 
         t = type(event)

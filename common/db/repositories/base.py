@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Generic, Type, TypeVar
+from typing import Generic, TypeVar
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -11,7 +11,7 @@ T = TypeVar("T", bound=Base)
 
 
 class BaseRepository(Generic[T]):
-    def __init__(self, model: Type[T], db: Session) -> None:
+    def __init__(self, model: type[T], db: Session) -> None:
         self._model = model
         self._db = db
 

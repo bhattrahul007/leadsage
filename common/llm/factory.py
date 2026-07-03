@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def create_llm(llm_config: "LLMConfig", model_name: str, agent_name: str | None = None) -> BaseLLM:
+def create_llm(llm_config: LLMConfig, model_name: str, agent_name: str | None = None) -> BaseLLM:
     provider = llm_config.provider
     override = llm_config.get_agent_override(agent_name) if agent_name else None
 
@@ -67,7 +67,7 @@ def create_llm(llm_config: "LLMConfig", model_name: str, agent_name: str | None 
         cfg = llm_config.openai
         api_key = cfg.api_key
         if not api_key:
-            raise EnvironmentError(
+            raise OSError(
                 f"OpenAI API key not found. Set the {cfg.api_key_env!r} environment variable."
             )
         timeout = override.timeout if override and override.timeout is not None else cfg.timeout
@@ -90,7 +90,7 @@ def create_llm(llm_config: "LLMConfig", model_name: str, agent_name: str | None 
         cfg = llm_config.groq
         api_key = cfg.api_key
         if not api_key:
-            raise EnvironmentError(
+            raise OSError(
                 f"Groq API key not found. Set the {cfg.api_key_env!r} environment variable."
             )
         timeout = override.timeout if override and override.timeout is not None else cfg.timeout
@@ -113,7 +113,7 @@ def create_llm(llm_config: "LLMConfig", model_name: str, agent_name: str | None 
         cfg = llm_config.together
         api_key = cfg.api_key
         if not api_key:
-            raise EnvironmentError(
+            raise OSError(
                 f"Together AI key not found. Set the {cfg.api_key_env!r} environment variable."
             )
         timeout = override.timeout if override and override.timeout is not None else cfg.timeout
@@ -136,7 +136,7 @@ def create_llm(llm_config: "LLMConfig", model_name: str, agent_name: str | None 
         cfg = llm_config.anthropic
         api_key = cfg.api_key
         if not api_key:
-            raise EnvironmentError(
+            raise OSError(
                 f"Anthropic API key not found. Set the {cfg.api_key_env!r} environment variable."
             )
         timeout = override.timeout if override and override.timeout is not None else cfg.timeout

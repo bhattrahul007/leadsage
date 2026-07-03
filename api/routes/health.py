@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+
 from api.schemas import HealthResponse
 
 router = APIRouter()
@@ -13,6 +14,7 @@ def health_check() -> HealthResponse:
     redis_status = "unavailable"
     try:
         import redis as redis_lib
+
         from common.config import load_config
 
         cfg = load_config()

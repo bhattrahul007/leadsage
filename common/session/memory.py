@@ -1,12 +1,10 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 import gzip
 import hashlib
-import json
 import logging
 import threading
-from collections import OrderedDict
-from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +141,7 @@ class MemoryManager:
             }
 
     @classmethod
-    def from_config(cls, config) -> "MemoryManager":
+    def from_config(cls, config) -> MemoryManager:
         from common.session.cache import _RedisBackend
 
         redis = None

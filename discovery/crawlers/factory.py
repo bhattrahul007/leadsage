@@ -47,7 +47,7 @@ class CrawlerFactory:
     def create(
         cls,
         crawler_type: str,
-        config: "CrawlerConfig | None" = None,
+        config: CrawlerConfig | None = None,
     ) -> BaseCrawler:
         """
         Instantiate a crawler by type slug.
@@ -76,8 +76,8 @@ class CrawlerFactory:
     def create_with_proxy(
         cls,
         crawler_type: str,
-        config: "CrawlerConfig | None",
-        proxy_provider: "BaseProxyProvider",
+        config: CrawlerConfig | None,
+        proxy_provider: BaseProxyProvider,
     ) -> BaseCrawler:
         """
         Create a crawler wrapped in ``ProxiedCrawler``.

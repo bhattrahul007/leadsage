@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
+import re
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -40,7 +40,7 @@ class LinkedInExtractor:
             lead.company_summary = profile.tagline
     """
 
-    def extract(self, page: "CrawledPage") -> LinkedInProfile | None:
+    def extract(self, page: CrawledPage) -> LinkedInProfile | None:
         if not page.success:
             return None
         if "linkedin.com/company" not in (page.final_url or page.url):

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass, field
 import functools
 import logging
 import random
 import time
-from dataclasses import dataclass, field
-from typing import Any, Callable, Literal, Sequence, TypeVar
+from typing import Any, Literal, TypeVar
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 

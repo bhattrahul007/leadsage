@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -25,7 +25,7 @@ class CompanyRepository(BaseRepository[CompanyModel]):
             for k, v in fields.items():
                 if v is not None:
                     setattr(record, k, v)
-            record.updated_at = datetime.now(timezone.utc)
+            record.updated_at = datetime.now(UTC)
             self._db.flush()
             return record
         record = CompanyModel(domain=domain, **fields)

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+import uuid
 
 from discovery.retreivers.base import SearchConfig, SearchResult
 
@@ -76,7 +76,7 @@ class SearchSession:
     config: SearchConfig
     responses: list[ProviderResponse]
     session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     @property
     def all_results(self) -> list[SearchResult]:

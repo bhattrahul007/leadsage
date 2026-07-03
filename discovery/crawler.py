@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import concurrent.futures
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from html.parser import HTMLParser
 import json
 import logging
 import re
 import time
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from html.parser import HTMLParser
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -381,7 +381,7 @@ class WebCrawler:
     def crawl(self, url: str) -> CrawledPage:
         """Fetch and parse a single URL. Always returns a CrawledPage."""
         start = time.perf_counter()
-        fetched_at = datetime.now(timezone.utc).isoformat()
+        fetched_at = datetime.now(UTC).isoformat()
         cfg = self.config
 
         # Per-domain rate limiting
@@ -474,7 +474,7 @@ class WebCrawler:
                         text_content="",
                         meta=ExtractedMeta(),
                         links=[],
-                        crawled_at=datetime.now(timezone.utc).isoformat(),
+                        crawled_at=datetime.now(UTC).isoformat(),
                         latency_ms=0.0,
                         success=False,
                         error=str(exc),

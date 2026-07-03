@@ -3,9 +3,8 @@ from __future__ import annotations
 import logging
 import os
 import time
-from functools import lru_cache
 
-from discovery.retreivers.base import BaseSearchProvider, SearchConfig, SearchResult
+from discovery.retreivers.base import BaseSearchProvider, SearchResult
 from discovery.retreivers.registry import register_search_engine
 
 logger = logging.getLogger(__name__)

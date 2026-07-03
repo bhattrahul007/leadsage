@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import concurrent.futures
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 import gzip
 import hashlib
 import json
 import logging
 import time
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from discovery.retreivers.base import SearchConfig, SearchResult
@@ -63,7 +63,7 @@ class SearchOrchestrator:
     def __init__(
         self,
         config: OrchestratorConfig | None = None,
-        cache: "LeadCache | None" = None,
+        cache: LeadCache | None = None,
     ) -> None:
         self.config = config or OrchestratorConfig()
         self._cache = cache
@@ -85,8 +85,6 @@ class SearchOrchestrator:
         """
         cfg = search_config or SearchConfig()
         responses: list[ProviderResponse] = []
-
-        from common.ratelimit import RateLimiterRegistry
 
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=self.config.max_workers,
@@ -116,7 +114,7 @@ class SearchOrchestrator:
                             query=query,
                             results=[],
                             latency_ms=0.0,
-                            fetched_at=datetime.now(timezone.utc),
+                            fetched_at=datetime.now(UTC),
                             success=False,
                             error=str(exc),
                         )
@@ -148,7 +146,7 @@ class SearchOrchestrator:
                         query=query,
                         results=results,
                         latency_ms=0.0,
-                        fetched_at=datetime.now(timezone.utc),
+                        fetched_at=datetime.now(UTC),
                         success=True,
                         total_results=len(results),
                     )
@@ -180,7 +178,7 @@ class SearchOrchestrator:
     ) -> ProviderResponse:
         """Call one provider and wrap its output in a ProviderResponse."""
         start = time.perf_counter()
-        fetched_at = datetime.now(timezone.utc)
+        fetched_at = datetime.now(UTC)
         try:
             results = get_provider(name, query, config).search()
             latency_ms = (time.perf_counter() - start) * 1000

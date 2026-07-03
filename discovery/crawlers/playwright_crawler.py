@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import concurrent.futures
+from datetime import UTC, datetime
 import logging
 import time
-from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from discovery.crawler import CrawledPage, CrawlerConfig, ExtractedMeta
@@ -47,13 +47,13 @@ class PlaywrightCrawler(BaseCrawler):
     def crawl(
         self,
         url: str,
-        proxy: "ProxyDict | None" = None,
+        proxy: ProxyDict | None = None,
     ) -> CrawledPage:
-        from playwright.sync_api import sync_playwright, Error as PWError
+        from playwright.sync_api import sync_playwright
 
         cfg = self._config
         start = time.perf_counter()
-        fetched_at = datetime.now(timezone.utc).isoformat()
+        fetched_at = datetime.now(UTC).isoformat()
 
         launch_kwargs: dict = {"headless": True}
         if proxy:
@@ -87,7 +87,7 @@ class PlaywrightCrawler(BaseCrawler):
                 browser.close()
 
             # Re-use the stdlib HTML parser for consistent extraction
-            from discovery.crawler import _PageParser, _build_meta
+            from discovery.crawler import _build_meta, _PageParser
 
             parser = _PageParser(final_url, max_links=cfg.max_links)
             parser.feed(html)
@@ -128,7 +128,7 @@ class PlaywrightCrawler(BaseCrawler):
         self,
         urls: list[str],
         max_workers: int = 3,  # Playwright is heavy; default lower
-        proxy_provider: "BaseProxyProvider | None" = None,
+        proxy_provider: BaseProxyProvider | None = None,
     ) -> list[CrawledPage]:
         """Crawl multiple URLs using a thread pool (each thread gets its own browser)."""
         if not urls:
@@ -165,7 +165,7 @@ class PlaywrightCrawler(BaseCrawler):
                         text_content="",
                         meta=ExtractedMeta(),
                         links=[],
-                        crawled_at=datetime.now(timezone.utc).isoformat(),
+                        crawled_at=datetime.now(UTC).isoformat(),
                         latency_ms=0.0,
                         success=False,
                         error=str(exc),
