@@ -16,8 +16,15 @@ class CompanyRepository(BaseRepository[CompanyModel]):
     def upsert(self, domain: str, **fields) -> CompanyModel:
         record = self.get(domain)
         if record:
+            # Merge list signals rather than overwrite
+            for list_field in ("tech_stack", "industry_tags"):
+                incoming = fields.pop(list_field, None)
+                if incoming:
+                    existing = set(getattr(record, list_field) or [])
+                    setattr(record, list_field, sorted(existing | set(incoming)))
             for k, v in fields.items():
-                setattr(record, k, v)
+                if v is not None:
+                    setattr(record, k, v)
             record.updated_at = datetime.now(timezone.utc)
             self._db.flush()
             return record
@@ -25,15 +32,11 @@ class CompanyRepository(BaseRepository[CompanyModel]):
         return self.add(record)
 
     def search_by_industry(self, industry_tag: str) -> list[CompanyModel]:
-        stmt = select(CompanyModel).where(
-            CompanyModel.industry_tags.contains([industry_tag])
-        )
+        stmt = select(CompanyModel).where(CompanyModel.industry_tags.contains([industry_tag]))
         return list(self._db.execute(stmt).scalars().all())
 
     def search_by_tech(self, tech: str) -> list[CompanyModel]:
-        stmt = select(CompanyModel).where(
-            CompanyModel.tech_stack.contains([tech])
-        )
+        stmt = select(CompanyModel).where(CompanyModel.tech_stack.contains([tech]))
         return list(self._db.execute(stmt).scalars().all())
 
     def get_yc_companies(self, batch: str | None = None) -> list[CompanyModel]:
@@ -47,7 +50,14 @@ class DecisionMakerRepository(BaseRepository[DecisionMakerModel]):
     def __init__(self, db: Session) -> None:
         super().__init__(DecisionMakerModel, db)
 
-    def upsert(self, domain: str, title: str, email: str | None = None, linkedin_url: str | None = None, **fields) -> DecisionMakerModel:
+    def upsert(
+        self,
+        domain: str,
+        title: str,
+        email: str | None = None,
+        linkedin_url: str | None = None,
+        **fields,
+    ) -> DecisionMakerModel:
         stmt = select(DecisionMakerModel).where(DecisionMakerModel.domain == domain)
         if email:
             stmt = stmt.where(DecisionMakerModel.email == email)

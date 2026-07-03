@@ -1,76 +1,48 @@
-from __future__ import annotations
-
 import logging
 import threading
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import Any
 
+from common.events.events import (
+    ALL_EVENT_TYPES,
+    CrawlCompleted,
+    CrawlFailed,
+    IcpParsed,
+    LeadEnriched,
+    LeadScored,
+    PipelineCompleted,
+    PipelineFailed,
+    PipelineStarted,
+    ProxyFailed,
+    ProxyRotated,
+    QueryPlanned,
+    SearchCompleted,
+    SessionCreated,
+    SessionResumed,
+)
+
 logger = logging.getLogger(__name__)
 
 
 class BaseObserver(ABC):
-    """
-    Abstract observer. Subclass this to create custom observers.
+    """Abstract observer — subscribe to EventBus events.
 
-    Implement:
-    - ``subscribes_to()`` → the event types this observer cares about
-    - ``handle(event)``   → the handler called by the EventBus
-
-    Example::
-
-        class SlackObserver(BaseObserver):
-            def subscribes_to(self):
-                return [PipelineCompleted, LeadScored]
-
-            def handle(self, event):
-                if isinstance(event, PipelineCompleted):
-                    slack.send(f"Pipeline done: {event.total_leads} leads")
+    Implement ``subscribes_to()`` (which event types) and ``handle(event)``
+    (the callback). Never raise inside handle — catch errors internally.
     """
 
     @abstractmethod
-    def subscribes_to(self) -> list[type]:
-        """Return the list of event types this observer handles."""
-        ...
+    def subscribes_to(self) -> list[type]: ...
 
     @abstractmethod
-    def handle(self, event: Any) -> None:
-        """Process one event. Never raise — catch errors internally."""
-        ...
+    def handle(self, event: Any) -> None: ...
 
 
 class LoggingObserver(BaseObserver):
-    """
-    Writes one structured log line per event.
+    """Writes one structured log line per event (INFO for key events, DEBUG otherwise)."""
 
-    The log level is configurable (default INFO for key events, DEBUG for
-    fine-grained events like individual crawl requests).
-    """
-
-    from common.events.events import (
-        PipelineStarted,
-        PipelineCompleted,
-        PipelineFailed,
-        IcpParsed,
-        QueryPlanned,
-        SearchStarted,
-        SearchCompleted,
-        CrawlStarted,
-        CrawlCompleted,
-        CrawlFailed,
-        ProxyAcquired,
-        ProxyRotated,
-        ProxyFailed,
-        LeadEnriched,
-        LeadScored,
-        LeadSkipped,
-        CacheHit,
-        CacheMiss,
-        SessionCreated,
-        SessionResumed,
-    )
-
-    _INFO_TYPES = frozenset(
+    _INFO_TYPES: frozenset[type] = frozenset(
         [
             PipelineStarted,
             PipelineCompleted,
@@ -87,8 +59,6 @@ class LoggingObserver(BaseObserver):
     )
 
     def subscribes_to(self) -> list[type]:
-        from common.events.events import ALL_EVENT_TYPES
-
         return list(ALL_EVENT_TYPES)
 
     def handle(self, event: Any) -> None:
@@ -97,38 +67,7 @@ class LoggingObserver(BaseObserver):
 
 
 class MetricsObserver(BaseObserver):
-    """
-    Accumulates pipeline metrics in-memory.
-
-    Access via ``observer.snapshot()`` for a JSON-safe dict.
-
-    Tracked::
-
-        search_calls:     total provider calls
-        search_results:   total results returned
-        crawl_attempts:   total URLs crawled
-        crawl_successes:  successful crawls
-        crawl_from_cache: cache-hit crawls
-        leads_enriched:   passed min_score
-        leads_hot:        hot tier count
-        leads_warm:       warm tier count
-        leads_cold:       cold tier count
-        proxy_rotations:  proxy rotation count
-        proxy_failures:   proxy failure count
-        pipeline_runs:    total complete pipeline runs
-        avg_pipeline_ms:  rolling average pipeline time
-    """
-
-    from common.events.events import (
-        SearchCompleted,
-        CrawlCompleted,
-        CrawlFailed,
-        LeadEnriched,
-        LeadScored,
-        ProxyRotated,
-        ProxyFailed,
-        PipelineCompleted,
-    )
+    """Accumulates pipeline metrics in-memory. Read via ``snapshot()``."""
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
@@ -137,49 +76,42 @@ class MetricsObserver(BaseObserver):
 
     def subscribes_to(self) -> list[type]:
         return [
-            self.SearchCompleted,
-            self.CrawlCompleted,
-            self.CrawlFailed,
-            self.LeadEnriched,
-            self.LeadScored,
-            self.ProxyRotated,
-            self.ProxyFailed,
-            self.PipelineCompleted,
+            SearchCompleted,
+            CrawlCompleted,
+            CrawlFailed,
+            LeadEnriched,
+            LeadScored,
+            ProxyRotated,
+            ProxyFailed,
+            PipelineCompleted,
         ]
 
     def handle(self, event: Any) -> None:
         with self._lock:
             t = type(event)
-            if t is self.SearchCompleted:
+            if t is SearchCompleted:
                 self._counts["search_calls"] += 1
                 self._counts["search_results"] += event.result_count
                 self._totals["search_latency_ms"] += event.latency_ms
-
-            elif t is self.CrawlCompleted:
+            elif t is CrawlCompleted:
                 self._counts["crawl_attempts"] += 1
                 if event.success:
                     self._counts["crawl_successes"] += 1
                 if event.from_cache:
                     self._counts["crawl_from_cache"] += 1
                 self._totals["crawl_latency_ms"] += event.latency_ms
-
-            elif t is self.CrawlFailed:
+            elif t is CrawlFailed:
                 self._counts["crawl_failures"] += 1
-
-            elif t is self.LeadEnriched:
+            elif t is LeadEnriched:
                 self._counts["leads_enriched"] += 1
-
-            elif t is self.LeadScored:
+            elif t is LeadScored:
                 self._counts["leads_scored"] += 1
                 self._counts[f"leads_{event.tier}"] += 1
-
-            elif t is self.ProxyRotated:
+            elif t is ProxyRotated:
                 self._counts["proxy_rotations"] += 1
-
-            elif t is self.ProxyFailed:
+            elif t is ProxyFailed:
                 self._counts["proxy_failures"] += 1
-
-            elif t is self.PipelineCompleted:
+            elif t is PipelineCompleted:
                 self._counts["pipeline_runs"] += 1
                 self._totals["pipeline_ms"] += event.pipeline_ms
 
@@ -193,8 +125,7 @@ class MetricsObserver(BaseObserver):
                 **c,
                 "avg_pipeline_ms": round(avg_ms, 1),
                 "crawl_success_rate": round(
-                    c.get("crawl_successes", 0) / max(c.get("crawl_attempts", 1), 1),
-                    3,
+                    c.get("crawl_successes", 0) / max(c.get("crawl_attempts", 1), 1), 3
                 ),
             }
 
@@ -205,59 +136,43 @@ class MetricsObserver(BaseObserver):
 
 
 class ConsoleObserver(BaseObserver):
-    """
-    Prints concise progress lines to stdout. Good for CLI use.
-
-    Format::
-
-        ✓  [crawl]  https://acmecorp.com  (123ms)
-        🔥 [lead]   acmecorp.com  score=0.82  HOT
-    """
-
-    from common.events.events import (
-        PipelineStarted,
-        PipelineCompleted,
-        CrawlCompleted,
-        LeadScored,
-        SearchCompleted,
-        ProxyRotated,
-    )
+    """Prints concise progress lines to stdout (CLI use)."""
 
     _TIER_ICON = {"hot": "🔥", "warm": "🌤 ", "cold": "❄️ "}
 
     def subscribes_to(self) -> list[type]:
         return [
-            self.PipelineStarted,
-            self.PipelineCompleted,
-            self.CrawlCompleted,
-            self.LeadScored,
-            self.SearchCompleted,
-            self.ProxyRotated,
+            PipelineStarted,
+            PipelineCompleted,
+            CrawlCompleted,
+            LeadScored,
+            SearchCompleted,
+            ProxyRotated,
         ]
 
     def handle(self, event: Any) -> None:
         t = type(event)
-        if t is self.PipelineStarted:
+        if t is PipelineStarted:
             print(f"\n🚀 Pipeline started — query: {event.query[:70]}")
-        elif t is self.SearchCompleted:
+        elif t is SearchCompleted:
             status = "✓" if event.success else "✗"
             print(
                 f"  {status}  [search]  {event.provider:10s}  {event.result_count} results  ({event.latency_ms:.0f}ms)"
             )
-        elif t is self.CrawlCompleted:
+        elif t is CrawlCompleted:
             status = "✓" if event.success else "✗"
             cached = " [cache]" if event.from_cache else ""
             print(
                 f"  {status}  [crawl]   {_truncate(event.url, 60)}{cached}  ({event.latency_ms:.0f}ms)"
             )
-        elif t is self.LeadScored:
+        elif t is LeadScored:
             icon = self._TIER_ICON.get(event.tier, "")
             print(
                 f"  {icon} [lead]    {event.company_name:30s}  score={event.icp_score:.2f}  {event.tier.upper()}"
             )
-        elif t is self.ProxyRotated:
+        elif t is ProxyRotated:
             print(f"  ↻  [proxy]  rotated → {event.new_proxy}  ({event.reason})")
-        elif t is self.PipelineCompleted:
+        elif t is PipelineCompleted:
             print(
                 f"\n✅ Pipeline done  {event.total_leads} leads  "
                 f"🔥{event.hot_count} / 🌤{event.warm_count} / ❄️{event.cold_count}  "
@@ -266,17 +181,7 @@ class ConsoleObserver(BaseObserver):
 
 
 class WebhookObserver(BaseObserver):
-    """
-    POSTs every event as JSON to a configured webhook URL.
-
-    Runs in a background thread so it never blocks the pipeline.
-
-    Args:
-        url:           Webhook endpoint.
-        event_types:   Subset of event types to forward (default: all).
-        secret_header: Optional ``Authorization`` header value.
-        timeout:       HTTP timeout in seconds.
-    """
+    """POSTs every event as JSON to a webhook URL (fire-and-forget thread pool)."""
 
     def __init__(
         self,
@@ -286,7 +191,6 @@ class WebhookObserver(BaseObserver):
         timeout: int = 5,
     ) -> None:
         import concurrent.futures
-        from common.events.events import ALL_EVENT_TYPES
 
         self._url = url
         self._types = event_types or list(ALL_EVENT_TYPES)
@@ -308,22 +212,13 @@ class WebhookObserver(BaseObserver):
         try:
             import requests
 
-            payload = {
-                "event_type": type(event).__name__,
-                "data": _event_to_dict(event),
-            }
-            requests.post(
-                self._url,
-                json=payload,
-                headers=self._headers,
-                timeout=self._timeout,
-            )
+            payload = {"event_type": type(event).__name__, "data": _event_to_dict(event)}
+            requests.post(self._url, json=payload, headers=self._headers, timeout=self._timeout)
         except Exception as exc:
             logger.debug("WebhookObserver send failed: %s", exc)
 
 
 def _event_summary(event: Any) -> str:
-    """Short human-readable summary of an event for log lines."""
     fields = []
     for k, v in vars(event).items():
         if k == "timestamp":
@@ -336,12 +231,10 @@ def _event_summary(event: Any) -> str:
 
 
 def _event_to_dict(event: Any) -> dict:
-    """Convert a frozen dataclass event to a JSON-safe dict."""
     import dataclasses
 
     if dataclasses.is_dataclass(event):
         d = dataclasses.asdict(event)
-        # datetime → ISO string
         for k, v in d.items():
             if hasattr(v, "isoformat"):
                 d[k] = v.isoformat()

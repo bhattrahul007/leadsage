@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
@@ -207,6 +205,27 @@ class MemoryEvicted:
     timestamp: datetime = field(default_factory=_now)
 
 
+@dataclass(frozen=True)
+class ContextCompressed:
+    """Fired when SummaryBufferWindow compacts old turns into a rolling summary."""
+
+    session_id: str
+    turns_compacted: int
+    summary_preview: str  # first 120 chars of the new summary text
+    new_summary_chars: int
+    timestamp: datetime = field(default_factory=_now)
+
+
+@dataclass(frozen=True)
+class LlmCacheHit:
+    """Fired when CachedLLM returns a stored response without calling the LLM."""
+
+    session_id: str
+    model: str
+    agent_role: str
+    timestamp: datetime = field(default_factory=_now)
+
+
 ALL_EVENT_TYPES: tuple[type, ...] = (
     PipelineStarted,
     PipelineCompleted,
@@ -229,4 +248,6 @@ ALL_EVENT_TYPES: tuple[type, ...] = (
     SessionCreated,
     SessionResumed,
     MemoryEvicted,
+    ContextCompressed,
+    LlmCacheHit,
 )

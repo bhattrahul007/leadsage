@@ -7,7 +7,10 @@ import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
+
+if TYPE_CHECKING:
+    from common.context.window import SummaryBufferWindow
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +92,8 @@ class SessionManager:
         self._max_mem = max_in_memory
         self._url_sets: dict[str, set[str]] = {}
         self._conversations: dict[str, list[ConversationMessage]] = {}
+        # Optional SummaryBufferWindow per session (set via attach_context_window)
+        self._context_window: dict[str, Any] = {}
 
     def create(self, query: str) -> Session:
         session = Session(id=str(uuid.uuid4()), query=query)
@@ -178,9 +183,13 @@ class SessionManager:
         with self._lock:
             history = self._conversations.setdefault(session_id, [])
             history.append(msg)
-            # Trim in-memory to limit
+            # Trim in-memory to limit (DB keeps the full log)
             if len(history) > self._conv_limit:
-                self._conversations[session_id] = history[-self._conv_limit:]
+                self._conversations[session_id] = history[-self._conv_limit :]
+
+        # Mirror to SummaryBufferWindow if wired
+        if self._context_window and session_id in self._context_window:
+            self._context_window[session_id].add(role, content, agent=agent_name)
 
         self._persist_conversation(session_id)
         return msg
@@ -222,7 +231,9 @@ class SessionManager:
             return ""
         lines = []
         for msg in history:
-            prefix = {"user": "Human", "assistant": "Assistant", "system": "System"}.get(msg.role, msg.role)
+            prefix = {"user": "Human", "assistant": "Assistant", "system": "System"}.get(
+                msg.role, msg.role
+            )
             lines.append(f"{prefix}: {msg.content}")
         return "\n".join(lines)
 
@@ -233,6 +244,7 @@ class SessionManager:
             history = self._conversations.get(session_id, [])
         try:
             import gzip
+
             payload = json.dumps([m.to_dict() for m in history], ensure_ascii=False)
             compressed = gzip.compress(payload.encode(), compresslevel=6)
             self._cache._redis.set(f"conv:{session_id}", compressed, self._conv_ttl)
@@ -244,6 +256,7 @@ class SessionManager:
             return []
         try:
             import gzip
+
             data = self._cache._redis.get(f"conv:{session_id}")
             if data:
                 payload = json.loads(gzip.decompress(data).decode())
@@ -261,6 +274,21 @@ class SessionManager:
 
         if self._cache:
             self._cache.set_session_state(session.id, session.to_dict(), ttl=self._ttl)
+
+    def attach_context_window(self, session_id: str, window: "SummaryBufferWindow") -> None:
+        """Wire a SummaryBufferWindow to a session for auto-mirroring."""
+        self._context_window[session_id] = window
+
+    def get_agent_context(self, session_id: str, budget_tokens: int = 2000) -> str:
+        """
+        Return a rich context string for agent prompts.
+
+        Uses the SummaryBufferWindow if available (summary + recent turns),
+        otherwise falls back to plain conversation history.
+        """
+        if session_id in self._context_window:
+            return self._context_window[session_id].get_context(budget_tokens)
+        return self.get_conversation_context(session_id, last_n=10)
 
     @classmethod
     def from_config(cls, config, cache=None) -> "SessionManager":

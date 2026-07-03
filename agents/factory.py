@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -28,27 +26,12 @@ def register_agent(name: str):
 
 
 class AgentFactory:
-    """
-    Creates ``BaseAgent`` instances from ``AppConfig``.
-
-    The factory:
-    1. Looks up the agent class in the registry.
-    2. Reads the model name from ``config.llm.models.<required_model_role>``.
-    3. Creates the LLM backend via ``create_llm()``.
-    4. Injects ``bus`` and ``session`` as optional deps.
-
-    Example::
-
-        from agents.factory import AgentFactory
-
-        icp_agent = AgentFactory.create("icp_parser", config, bus=bus, session=s)
-        scorer    = AgentFactory.create("lead_scorer", config, bus=bus, session=s)
-    """
+    """Creates ``BaseAgent`` instances from ``AppConfig``."""
 
     @staticmethod
     def _ensure_registered() -> None:
-        """Import all built-in agents to trigger their decorators."""
         from agents import icp_parser  # noqa: F401
+        from agents import icp_refiner  # noqa: F401
         from agents import lead_scorer  # noqa: F401
         from agents import research  # noqa: F401
         from agents import contact_finder  # noqa: F401
@@ -62,22 +45,7 @@ class AgentFactory:
         session: "Session | None" = None,
         **extra_kwargs: Any,
     ) -> BaseAgent:
-        """
-        Instantiate an agent by name.
-
-        Args:
-            agent_name:   Registry slug, e.g. ``"icp_parser"``.
-            config:       Full ``AppConfig`` for LLM config lookup.
-            bus:          Optional ``EventBus`` for event publishing.
-            session:      Optional current ``Session``.
-            **extra_kwargs: Passed to the agent constructor.
-
-        Returns:
-            A ready-to-use ``BaseAgent`` instance.
-
-        Raises:
-            ValueError: If ``agent_name`` is not registered.
-        """
+        """Instantiate an agent by name, injecting LLM, cache, bus, and session."""
         cls._ensure_registered()
 
         if agent_name not in _AGENT_REGISTRY:
@@ -85,8 +53,6 @@ class AgentFactory:
             raise ValueError(f"Unknown agent: {agent_name!r}. Available: [{available}]")
 
         agent_cls = _AGENT_REGISTRY[agent_name]
-
-        # Resolve model name from config
         model_role = agent_cls.required_model_role
         model_name = getattr(config.llm.models, model_role, config.llm.models.lead_scorer)
 
@@ -94,12 +60,34 @@ class AgentFactory:
 
         llm = create_llm(config.llm, model_name, agent_name=agent_name)
 
-        logger.debug(
-            "Creating agent %s with model=%s role=%s",
-            agent_name,
-            model_name,
-            model_role,
-        )
+        if config.session.llm_cache_enabled:
+            try:
+                from common.llm.cached_llm import CachedLLM
+                from common.llm.response_cache import LLMResponseCache
+
+                resp_cache = LLMResponseCache(lru_maxsize=config.session.llm_cache_lru_maxsize)
+
+                def _on_hit(model: str) -> None:
+                    if bus:
+                        from common.events.events import LlmCacheHit
+
+                        bus.publish(
+                            LlmCacheHit(
+                                session_id=session.id if session else "no_session",
+                                model=model,
+                                agent_role=agent_name,
+                            )
+                        )
+
+                llm = CachedLLM.for_agent(llm, resp_cache, agent_name, on_cache_hit=_on_hit)
+            except Exception:
+                pass
+
+        override = config.llm.get_agent_override(agent_name)
+        if override.timeout_budget_s and "timeout_budget_s" not in extra_kwargs:
+            extra_kwargs["timeout_budget_s"] = override.timeout_budget_s
+
+        logger.debug("Creating agent %s model=%s role=%s", agent_name, model_name, model_role)
         return agent_cls(llm=llm, bus=bus, session=session, **extra_kwargs)
 
     @classmethod

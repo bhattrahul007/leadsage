@@ -86,6 +86,60 @@ services:
     #   docker compose run --rm app "Find US SaaS companies using K8s"
     command: ["python", "main.py"]
 
+  worker:
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+    restart: unless-stopped
+    command:
+      - celery
+      - -A
+      - tasks.celery_app.celery_app
+      - worker
+      - --concurrency=4
+      - --loglevel=info
+      - --queues=default
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      CELERY_BROKER_URL: "redis://redis:6379/1"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/1"
+    volumes:
+      - ./config:/app/config:ro
+    mem_limit: 2g
+    memswap_limit: 2g
+    deploy:
+      replicas: 1  # scale to 3+ in production
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+    restart: unless-stopped
+    command: ["uvicorn", "api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+    volumes:
+      - ./config:/app/config:ro
+    mem_limit: 1g
+    memswap_limit: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
   prometheus:
     image: prom/prometheus:v2.52.0
     restart: unless-stopped

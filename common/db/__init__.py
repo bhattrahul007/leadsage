@@ -14,8 +14,10 @@ from common.db.models import (
 )
 from common.db.session import (
     init_engine,
+    init_read_replica,
     get_engine,
     get_session,
+    read_session,
     db_session,
     is_available,
     get_database_url,
@@ -46,8 +48,10 @@ __all__ = [
     "PipelineMetricModel",
     "LinkedSourceResultModel",
     "init_engine",
+    "init_read_replica",
     "get_engine",
     "get_session",
+    "read_session",
     "db_session",
     "is_available",
     "get_database_url",

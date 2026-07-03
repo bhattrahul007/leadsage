@@ -21,11 +21,20 @@ def create_llm(llm_config: "LLMConfig", model_name: str, agent_name: str | None 
         from common.llm.ollama import OllamaLLM
 
         cfg = llm_config.ollama
-        temperature = (override.temperature if override and override.temperature is not None else cfg.temperature)
-        num_predict = (override.num_predict if override and override.num_predict is not None else cfg.num_predict)
-        timeout = (override.timeout if override and override.timeout is not None else cfg.timeout)
+        temperature = (
+            override.temperature
+            if override and override.temperature is not None
+            else cfg.temperature
+        )
+        num_predict = (
+            override.num_predict
+            if override and override.num_predict is not None
+            else cfg.num_predict
+        )
+        timeout = override.timeout if override and override.timeout is not None else cfg.timeout
 
         from common.config import OllamaConfig
+
         merged = OllamaConfig(
             base_url=cfg.base_url,
             temperature=temperature,
@@ -38,8 +47,12 @@ def create_llm(llm_config: "LLMConfig", model_name: str, agent_name: str | None 
         from common.llm.openai_compat import OpenAICompatLLM
 
         cfg = llm_config.openai_compatible
-        timeout = (override.timeout if override and override.timeout is not None else cfg.timeout)
-        temperature = (override.temperature if override and override.temperature is not None else cfg.temperature)
+        timeout = override.timeout if override and override.timeout is not None else cfg.timeout
+        temperature = (
+            override.temperature
+            if override and override.temperature is not None
+            else cfg.temperature
+        )
         return OpenAICompatLLM(
             model_name=model_name,
             base_url=cfg.base_url,
@@ -57,8 +70,12 @@ def create_llm(llm_config: "LLMConfig", model_name: str, agent_name: str | None 
             raise EnvironmentError(
                 f"OpenAI API key not found. Set the {cfg.api_key_env!r} environment variable."
             )
-        timeout = (override.timeout if override and override.timeout is not None else cfg.timeout)
-        temperature = (override.temperature if override and override.temperature is not None else cfg.temperature)
+        timeout = override.timeout if override and override.timeout is not None else cfg.timeout
+        temperature = (
+            override.temperature
+            if override and override.temperature is not None
+            else cfg.temperature
+        )
         return OpenAICompatLLM(
             model_name=model_name or cfg.model,
             base_url=None,
@@ -76,8 +93,12 @@ def create_llm(llm_config: "LLMConfig", model_name: str, agent_name: str | None 
             raise EnvironmentError(
                 f"Groq API key not found. Set the {cfg.api_key_env!r} environment variable."
             )
-        timeout = (override.timeout if override and override.timeout is not None else cfg.timeout)
-        temperature = (override.temperature if override and override.temperature is not None else cfg.temperature)
+        timeout = override.timeout if override and override.timeout is not None else cfg.timeout
+        temperature = (
+            override.temperature
+            if override and override.temperature is not None
+            else cfg.temperature
+        )
         return OpenAICompatLLM(
             model_name=model_name,
             base_url=cfg.base_url,
@@ -95,8 +116,12 @@ def create_llm(llm_config: "LLMConfig", model_name: str, agent_name: str | None 
             raise EnvironmentError(
                 f"Together AI key not found. Set the {cfg.api_key_env!r} environment variable."
             )
-        timeout = (override.timeout if override and override.timeout is not None else cfg.timeout)
-        temperature = (override.temperature if override and override.temperature is not None else cfg.temperature)
+        timeout = override.timeout if override and override.timeout is not None else cfg.timeout
+        temperature = (
+            override.temperature
+            if override and override.temperature is not None
+            else cfg.temperature
+        )
         return OpenAICompatLLM(
             model_name=model_name,
             base_url=cfg.base_url,
@@ -114,8 +139,12 @@ def create_llm(llm_config: "LLMConfig", model_name: str, agent_name: str | None 
             raise EnvironmentError(
                 f"Anthropic API key not found. Set the {cfg.api_key_env!r} environment variable."
             )
-        timeout = (override.timeout if override and override.timeout is not None else cfg.timeout)
-        temperature = (override.temperature if override and override.temperature is not None else cfg.temperature)
+        timeout = override.timeout if override and override.timeout is not None else cfg.timeout
+        temperature = (
+            override.temperature
+            if override and override.temperature is not None
+            else cfg.temperature
+        )
         return AnthropicLLM(
             model_name=model_name or cfg.model,
             api_key=api_key,

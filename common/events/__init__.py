@@ -6,6 +6,7 @@ from common.events.observers import (
     MetricsObserver,
     WebhookObserver,
 )
+from common.events.sse import SseObserver
 
 __all__ = [
     "EventBus",
@@ -16,4 +17,5 @@ __all__ = [
     "MetricsObserver",
     "ConsoleObserver",
     "WebhookObserver",
+    "SseObserver",
 ]

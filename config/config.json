@@ -160,7 +160,13 @@
     "memory_lru_text_maxsize":     128,
     "memory_lru_summary_maxsize":  1024,
     "conversation_history_limit":  50,
-    "conversation_ttl":            2592000
+    "conversation_ttl":            2592000,
+    "llm_cache_enabled":           true,
+    "llm_cache_lru_maxsize":       512,
+    "llm_cache_ttl":               3600,
+    "context_max_tokens":          6000,
+    "context_max_turns":           40,
+    "context_chunk_size":          10
   },
 
   "scoring": {
@@ -191,7 +197,18 @@
   },
 
   "logging": {
-    "level":  "INFO",
-    "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    "level":       "INFO",
+    "format":      "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    "json_format": false
+  },
+
+  "rate_limits": {
+    "serper":       { "rpm": 60 },
+    "tavily":       { "rpm": 20 },
+    "bing":         { "rpm": 60 },
+    "github":       { "rpm": 30 },
+    "producthunt":  { "rpm": 20 },
+    "crunchbase":   { "rpm": 30 },
+    "lever":        { "rpm": 60 }
   }
 }

@@ -1,14 +1,21 @@
 from __future__ import annotations
 
 import concurrent.futures
+import gzip
+import hashlib
+import json
 import logging
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from discovery.retreivers.base import SearchConfig, SearchResult
 from discovery.retreivers.models import ProviderResponse, SearchSession
 from discovery.retreivers.registry import get_provider, list_providers
+
+if TYPE_CHECKING:
+    from common.session.cache import LeadCache
 
 logger = logging.getLogger(__name__)
 
@@ -53,8 +60,13 @@ class SearchOrchestrator:
         print(session.provider_summary())   # latency + health per provider
     """
 
-    def __init__(self, config: OrchestratorConfig | None = None) -> None:
+    def __init__(
+        self,
+        config: OrchestratorConfig | None = None,
+        cache: "LeadCache | None" = None,
+    ) -> None:
         self.config = config or OrchestratorConfig()
+        self._cache = cache
 
     def search(
         self,
@@ -74,12 +86,14 @@ class SearchOrchestrator:
         cfg = search_config or SearchConfig()
         responses: list[ProviderResponse] = []
 
+        from common.ratelimit import RateLimiterRegistry
+
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=self.config.max_workers,
             thread_name_prefix="discovery_worker",
         ) as pool:
             future_to_name: dict[concurrent.futures.Future, str] = {
-                pool.submit(self._call_provider, name, query, cfg): name
+                pool.submit(self._call_provider_cached, name, query, cfg): name
                 for name in self.config.providers
             }
 
@@ -109,6 +123,54 @@ class SearchOrchestrator:
                     )
 
         return SearchSession(query=query, config=cfg, responses=responses)
+
+    def _call_provider_cached(
+        self,
+        name: str,
+        query: str,
+        config: SearchConfig,
+    ) -> ProviderResponse:
+        """Call provider with L2 cache check and rate-limit gate."""
+        from common.ratelimit import RateLimiterRegistry
+
+        RateLimiterRegistry.acquire(name)
+
+        cache_key = _search_cache_key(name, query, config.max_results)
+        if self._cache:
+            cached = self._cache._get(cache_key)
+            if cached:
+                try:
+                    data = json.loads(gzip.decompress(cached).decode())
+                    results: list[SearchResult] = data["results"]
+                    logger.debug("[%s] search cache hit (%s)", name, query[:40])
+                    return ProviderResponse(
+                        provider=name,
+                        query=query,
+                        results=results,
+                        latency_ms=0.0,
+                        fetched_at=datetime.now(timezone.utc),
+                        success=True,
+                        total_results=len(results),
+                    )
+                except Exception:
+                    pass
+
+        response = self._call_provider(name, query, config)
+
+        if response.success and self._cache:
+            try:
+                payload = gzip.compress(
+                    json.dumps(
+                        {"results": response.results},
+                        ensure_ascii=False,
+                        default=str,
+                    ).encode()
+                )
+                self._cache._set(cache_key, payload, ttl=3600)
+            except Exception:
+                pass
+
+        return response
 
     @staticmethod
     def _call_provider(
@@ -143,3 +205,8 @@ class SearchOrchestrator:
                 success=False,
                 error=str(exc),
             )
+
+
+def _search_cache_key(provider: str, query: str, max_results: int) -> str:
+    digest = hashlib.sha256(f"{provider}:{query}:{max_results}".encode()).hexdigest()[:20]
+    return f"search:{digest}"

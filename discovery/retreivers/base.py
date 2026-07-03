@@ -143,12 +143,14 @@ class BaseSearchProvider(ABC):
         self.api_key = self._load_api_key()
 
     def _load_api_key(self) -> str:
-        key = os.getenv(self.env_key)
-        if not key:
+        from common.secrets import KeyRing
+
+        ring = KeyRing(self.env_key)
+        if not ring.available:
             raise EnvironmentError(
                 f"[{self.name}] API key missing. Set the {self.env_key!r} environment variable."
             )
-        return key
+        return ring.next_key()
 
     @abstractmethod
     def search(self) -> list[SearchResult]:

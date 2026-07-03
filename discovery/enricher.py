@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-import re
+
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 
 from common.schemas.icp_request import IcpDiscoveryQuery
+from common.email_validator import filter_valid
 from discovery.retreivers.base import SearchResult
 from discovery.crawler import CrawledPage
 
@@ -203,6 +205,13 @@ class LeadEnricher:
     ) -> None:
         self.icp = icp
         self.config = config or EnricherConfig()
+        # Override weights dynamically from ICP intent
+        self.config = EnricherConfig(
+            min_score=self.config.min_score,
+            weights=_compute_weights(icp),
+            max_evidence_snippets=self.config.max_evidence_snippets,
+            snippet_window=self.config.snippet_window,
+        )
         self._icp_techs = _lower_set(icp.technologies.required + icp.technologies.preferred)
         self._icp_industries = _lower_set(icp.target_company.industries)
         self._icp_locations = _lower_set(
@@ -243,6 +252,12 @@ class LeadEnricher:
         w = cfg.weights
         composite = w[0] * tech_score + w[1] * hiring_score + w[2] * profile_score
 
+        # Apply freshness multiplier based on search result date
+        freshness = _freshness_multiplier(
+            (search_result.get("metadata") or {}).get("published_date")
+        )
+        composite = min(1.0, composite * freshness)
+
         if composite < cfg.min_score:
             return None
 
@@ -276,7 +291,7 @@ class LeadEnricher:
             icp_relevance_score=round(composite, 4),
             evidence=evidence,
             # Contact info from crawled page
-            emails=page.meta.emails,
+            emails=filter_valid(page.meta.emails),
             phone_numbers=page.meta.phone_numbers,
             linkedin_url=social.get("linkedin"),
             github_url=social.get("github"),
@@ -396,6 +411,35 @@ def _infer_company_name(page: CrawledPage) -> str:
             return title.split(sep)[0].strip()
 
     return title.strip() or page.domain
+
+
+def _compute_weights(icp: IcpDiscoveryQuery) -> tuple[float, float, float]:
+    """Dynamic scoring weights based on the dominant ICP signal type."""
+    if icp.technologies.required:
+        return (0.50, 0.30, 0.20)  # tech-heavy ICP
+    if icp.signals.hiring_signals:
+        return (0.25, 0.50, 0.25)  # hiring-focused
+    if icp.target_company.industries:
+        return (0.30, 0.25, 0.45)  # industry-focused
+    return (0.40, 0.35, 0.25)  # balanced default
+
+
+def _freshness_multiplier(published_date: str | None) -> float:
+    """Time-decay factor: recent pages score higher."""
+    if not published_date:
+        return 0.85  # unknown date — slight penalty
+    try:
+        date = datetime.fromisoformat(published_date.replace("Z", "+00:00"))
+        age_days = (datetime.now(timezone.utc) - date).days
+        if age_days < 30:
+            return 1.0
+        if age_days < 90:
+            return 0.9
+        if age_days < 365:
+            return 0.75
+        return 0.5
+    except Exception:
+        return 0.85
 
 
 def _extract_evidence(

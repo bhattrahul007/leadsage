@@ -8,9 +8,7 @@ from discovery.retreivers.registry import register_search_engine
 
 logger = logging.getLogger(__name__)
 
-_CRUNCHBASE_AUTOCOMPLETE_URL = (
-    "https://api.crunchbase.com/api/v4/autocomplete"
-)
+_CRUNCHBASE_AUTOCOMPLETE_URL = "https://api.crunchbase.com/api/v4/autocomplete"
 
 
 @register_search_engine("crunchbase")
@@ -55,7 +53,11 @@ class CrunchbaseSearch(BaseSearchProvider):
             name = props.get("identifier", {}).get("value", "")
             short_desc = props.get("short_description", "")
             profile_url = f"https://www.crunchbase.com/organization/{slug}" if slug else ""
-            website = props.get("website", {}).get("value", "") if isinstance(props.get("website"), dict) else ""
+            website = (
+                props.get("website", {}).get("value", "")
+                if isinstance(props.get("website"), dict)
+                else ""
+            )
 
             href = website or profile_url
             if not href:

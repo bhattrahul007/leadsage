@@ -25,12 +25,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class PipelineConfig:
-    """
-    Full pipeline configuration.
-
-    All fields mirror ``PipelineSettings`` in ``common.config`` so
-    ``main.py`` can convert via ``PipelineConfig(**cfg.pipeline.model_dump())``.
-    """
+    """Full pipeline configuration (mirrors PipelineSettings in common.config)."""
 
     # search
     providers: list[str] = field(default_factory=list)
@@ -48,6 +43,12 @@ class PipelineConfig:
     # enrich
     enrich_enabled: bool = True
     min_lead_score: float = 0.15
+
+    # Multi-page per domain
+    pages_per_domain: int = 1
+    signal_paths: list[str] = field(
+        default_factory=lambda: ["/", "/about", "/careers", "/technology"]
+    )
 
     # URL selection
     skip_domains: list[str] = field(
@@ -163,29 +164,10 @@ class PipelineResult:
 
 
 class DiscoveryPipeline:
-    """
-    Orchestrates the full ICP → leads discovery pipeline.
+    """Orchestrates the full ICP → leads pipeline.
 
-    Stages
-    ------
-    1. Plan     — QueryPlanner builds QueryPlan from ICP.
-    2. Search   — SearchOrchestrator fans out queries concurrently.
-    3. Merge    — Dedup + rank URLs.
-    4. Crawl    — CrawlerFactory fetches pages (with cache + proxy support).
-    5. Enrich   — LeadEnricher scores + extracts signals.
-
-    Observability
-    -------------
-    Pass an ``EventBus`` to get typed events for every stage action.
-    Built-in observers (LoggingObserver, MetricsObserver, ConsoleObserver)
-    can be attached to the bus.
-
-    Args:
-        config:          Pipeline configuration.
-        bus:             Optional EventBus. All events are silently skipped if None.
-        cache:           Optional LeadCache. Pages cached to avoid re-crawls.
-        proxy_provider:  Optional proxy provider for IP rotation.
-        session_id:      Optional session ID for event attribution.
+    Stages: Plan → Search → Merge → Crawl → Enrich.
+    Pass an EventBus to receive typed events at every stage.
     """
 
     def __init__(
@@ -304,7 +286,8 @@ class DiscoveryPipeline:
             )
             providers = pq.providers or cfg.providers
             orchestrator = SearchOrchestrator(
-                OrchestratorConfig(providers=providers, max_workers=cfg.search_workers)
+                OrchestratorConfig(providers=providers, max_workers=cfg.search_workers),
+                cache=self._cache,
             )
             return orchestrator.search(pq.query_string, search_config=search_cfg)
 
@@ -374,7 +357,12 @@ class DiscoveryPipeline:
         filtered = [u for u in urls if not any(d in u for d in skip)]
         preferred = [u for u in filtered if any(d in u for d in prefer)]
         rest = [u for u in filtered if u not in set(preferred)]
-        return (preferred + rest)[: cfg.max_urls_to_crawl]
+        selected = (preferred + rest)[: cfg.max_urls_to_crawl]
+
+        if cfg.pages_per_domain > 1:
+            selected = _expand_domain_pages(selected, cfg.signal_paths, cfg.pages_per_domain)
+
+        return selected[: cfg.max_urls_to_crawl]
 
     def _publish(self, event) -> None:
         if self._bus:
@@ -464,3 +452,32 @@ class DiscoveryPipeline:
 
 def _start_stage(name: str) -> StageMetrics:
     return StageMetrics(stage=name, started_at=datetime.now(timezone.utc))
+
+
+def _expand_domain_pages(urls: list[str], signal_paths: list[str], per_domain: int) -> list[str]:
+    """Expand a URL list to include signal pages per domain."""
+    from urllib.parse import urlparse, urljoin
+
+    expanded: list[str] = []
+    seen_domains: dict[str, int] = {}
+
+    for url in urls:
+        domain = urlparse(url).netloc
+        count = seen_domains.get(domain, 0)
+        if count < per_domain:
+            expanded.append(url)
+            seen_domains[domain] = count + 1
+
+        # Inject additional signal pages for this domain up to per_domain
+        remaining = per_domain - seen_domains.get(domain, 0)
+        base = f"https://{domain}"
+        for path in signal_paths:
+            if remaining <= 0:
+                break
+            candidate = urljoin(base, path)
+            if candidate != url and candidate not in expanded:
+                expanded.append(candidate)
+                seen_domains[domain] = seen_domains.get(domain, 0) + 1
+                remaining -= 1
+
+    return expanded

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
 from typing import Any, TYPE_CHECKING
 
@@ -10,31 +8,13 @@ if TYPE_CHECKING:
 
 
 class BaseAgent(ABC):
-    """
-    Abstract base class for all pipeline agents.
+    """Abstract base for all pipeline agents.
 
-    Every agent:
-    - Holds a reference to its ``BaseLLM`` instance
-    - Optionally holds a reference to the ``EventBus`` for publishing events
-    - Has a ``run()`` method with agent-specific arguments
-    - Has a ``name`` class attribute for registration
-
-    Fault tolerance
-    ---------------
-    Agents must catch their own errors and return a sensible fallback.
-    They should never let exceptions propagate to the pipeline orchestrator.
-    The base class provides ``_safe_invoke()`` for guarded LLM calls.
-
-    Observability
-    -------------
-    Agents should publish relevant events (``LeadScored``, ``IcpParsed``, etc.)
-    to the bus during ``run()``. The bus handles all logging/metrics.
+    Subclasses set ``name`` (registry slug) and ``required_model_role``,
+    implement ``run()``, and use ``_safe_invoke()`` for guarded LLM calls.
     """
 
-    #: Unique slug for registration. Set this in subclasses.
     name: str = ""
-
-    #: The ``LLMConfig.models`` key this agent reads for its model name.
     required_model_role: str = "lead_scorer"
 
     def __init__(
@@ -42,44 +22,36 @@ class BaseAgent(ABC):
         llm: "BaseLLM",
         bus: "EventBus | None" = None,
         session: "Session | None" = None,
+        timeout_budget_s: int | None = None,
     ) -> None:
-        """
-        Args:
-            llm:     The LLM backend this agent uses.
-            bus:     Optional event bus for publishing lifecycle events.
-            session: Optional current session context.
-        """
         self.llm = llm
         self.bus = bus
         self.session = session
+        self._timeout_budget_s = timeout_budget_s
 
     @abstractmethod
     def run(self, **kwargs: Any) -> Any:
-        """
-        Execute the agent's task.
-
-        Args:
-            **kwargs: Agent-specific arguments.
-
-        Returns:
-            Agent-specific output. Should never raise.
-        """
+        """Execute the agent's task. Should never raise."""
         ...
 
     def _safe_invoke(self, prompt: str, schema, fallback=None):
-        """
-        Guarded structured LLM call — returns ``fallback`` on any error.
+        """Guarded structured LLM call — returns ``fallback`` on any error."""
+        import logging
+        import concurrent.futures
 
-        Args:
-            prompt:   The prompt string.
-            schema:   Pydantic model class for structured output.
-            fallback: Value to return on LLM failure.
-        """
+        budget = self._timeout_budget_s
         try:
+            if budget:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+                    future = ex.submit(self.llm.invoke_structured, prompt, schema)
+                    return future.result(timeout=budget)
             return self.llm.invoke_structured(prompt, schema)
+        except concurrent.futures.TimeoutError:
+            logging.getLogger(self.__class__.__name__).warning(
+                "LLM budget exceeded (%ds) — using fallback.", budget
+            )
+            return fallback
         except Exception as exc:
-            import logging
-
             logging.getLogger(self.__class__.__name__).warning(
                 "LLM call failed (%s: %s)", type(exc).__name__, exc
             )

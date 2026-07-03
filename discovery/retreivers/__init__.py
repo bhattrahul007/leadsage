@@ -14,6 +14,10 @@ _PROVIDERS = [
     "discovery.retreivers.yc.yc_search",
     "discovery.retreivers.github.github_search",
     "discovery.retreivers.crunchbase.crunchbase_search",
+    "discovery.retreivers.producthunt.ph_search",
+    "discovery.retreivers.jobboards.lever_search",
+    "discovery.retreivers.jobboards.greenhouse_search",
+    "discovery.retreivers.wellfound.wellfound_search",
 ]
 
 for _module_path in _PROVIDERS:

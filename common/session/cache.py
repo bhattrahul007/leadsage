@@ -85,7 +85,11 @@ class _RedisBackend:
             from redis.retry import Retry
             from redis.backoff import ExponentialBackoff
 
-            retry = Retry(ExponentialBackoff(cap=0.5, base=0.1), retries=3) if retry_on_timeout else None
+            retry = (
+                Retry(ExponentialBackoff(cap=0.5, base=0.1), retries=3)
+                if retry_on_timeout
+                else None
+            )
             pool = redis.ConnectionPool.from_url(
                 url,
                 max_connections=pool_size,

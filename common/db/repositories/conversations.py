@@ -30,7 +30,9 @@ class ConversationRepository(BaseRepository[ConversationMessageModel]):
         )
         return self.add(record)
 
-    def get_history(self, session_id: str, last_n: int | None = None) -> list[ConversationMessageModel]:
+    def get_history(
+        self, session_id: str, last_n: int | None = None
+    ) -> list[ConversationMessageModel]:
         stmt = (
             select(ConversationMessageModel)
             .where(ConversationMessageModel.session_id == session_id)
@@ -46,6 +48,8 @@ class ConversationRepository(BaseRepository[ConversationMessageModel]):
         history = self.get_history(session_id, last_n=last_n)
         lines = []
         for msg in history:
-            prefix = {"user": "Human", "assistant": "Assistant", "system": "System"}.get(msg.role, msg.role)
+            prefix = {"user": "Human", "assistant": "Assistant", "system": "System"}.get(
+                msg.role, msg.role
+            )
             lines.append(f"{prefix}: {msg.content}")
         return "\n".join(lines)

@@ -36,7 +36,9 @@ class SessionModel(Base):
     parsed_icp = Column(JSONB, default=dict)
     status = Column(String, nullable=False, default="created")
     created_at = Column(DateTime(timezone=True), default=_now, server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), default=_now, onupdate=_now, server_default=func.now())
+    updated_at = Column(
+        DateTime(timezone=True), default=_now, onupdate=_now, server_default=func.now()
+    )
     completed_at = Column(DateTime(timezone=True), nullable=True)
     total_leads = Column(Integer, default=0)
     hot_count = Column(Integer, default=0)
@@ -49,13 +51,25 @@ class SessionModel(Base):
     error = Column(Text, nullable=True)
     metadata_ = Column("metadata", JSONB, default=dict)
 
-    conversations = relationship("ConversationMessageModel", back_populates="session", cascade="all, delete-orphan")
+    conversations = relationship(
+        "ConversationMessageModel", back_populates="session", cascade="all, delete-orphan"
+    )
     leads = relationship("LeadModel", back_populates="session", cascade="all, delete-orphan")
-    search_queries = relationship("SearchQueryModel", back_populates="session", cascade="all, delete-orphan")
-    crawl_history = relationship("CrawlHistoryModel", back_populates="session", cascade="all, delete-orphan")
-    agent_runs = relationship("AgentRunModel", back_populates="session", cascade="all, delete-orphan")
-    pipeline_metrics = relationship("PipelineMetricModel", back_populates="session", cascade="all, delete-orphan")
-    linked_results = relationship("LinkedSourceResultModel", back_populates="session", cascade="all, delete-orphan")
+    search_queries = relationship(
+        "SearchQueryModel", back_populates="session", cascade="all, delete-orphan"
+    )
+    crawl_history = relationship(
+        "CrawlHistoryModel", back_populates="session", cascade="all, delete-orphan"
+    )
+    agent_runs = relationship(
+        "AgentRunModel", back_populates="session", cascade="all, delete-orphan"
+    )
+    pipeline_metrics = relationship(
+        "PipelineMetricModel", back_populates="session", cascade="all, delete-orphan"
+    )
+    linked_results = relationship(
+        "LinkedSourceResultModel", back_populates="session", cascade="all, delete-orphan"
+    )
 
 
 class ConversationMessageModel(Base):
@@ -141,10 +155,14 @@ class CompanyModel(Base):
     maturity_stage = Column(String, nullable=True)
     source_urls = Column(JSONB, default=list)
     discovered_at = Column(DateTime(timezone=True), default=_now, server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), default=_now, onupdate=_now, server_default=func.now())
+    updated_at = Column(
+        DateTime(timezone=True), default=_now, onupdate=_now, server_default=func.now()
+    )
 
     leads = relationship("LeadModel", back_populates="company")
-    decision_makers = relationship("DecisionMakerModel", back_populates="company", cascade="all, delete-orphan")
+    decision_makers = relationship(
+        "DecisionMakerModel", back_populates="company", cascade="all, delete-orphan"
+    )
 
 
 class LeadModel(Base):
@@ -152,7 +170,9 @@ class LeadModel(Base):
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     session_id = Column(String, ForeignKey("sessions.id", ondelete="CASCADE"))
-    domain = Column(String, ForeignKey("companies.domain", ondelete="SET NULL", use_alter=True), nullable=True)
+    domain = Column(
+        String, ForeignKey("companies.domain", ondelete="SET NULL", use_alter=True), nullable=True
+    )
     company_name = Column(String, nullable=True)
     lead_tier = Column(String, nullable=True)
     icp_relevance_score = Column(Float, nullable=True)
@@ -177,7 +197,9 @@ class LeadModel(Base):
 
     session = relationship("SessionModel", back_populates="leads")
     company = relationship("CompanyModel", back_populates="leads", foreign_keys=[domain])
-    outreach_suggestions = relationship("OutreachSuggestionModel", back_populates="lead", cascade="all, delete-orphan")
+    outreach_suggestions = relationship(
+        "OutreachSuggestionModel", back_populates="lead", cascade="all, delete-orphan"
+    )
 
 
 class DecisionMakerModel(Base):

@@ -13,10 +13,6 @@ logger = logging.getLogger(__name__)
 _DEFAULT_CONFIG_PATH = Path(__file__).parent.parent / "config" / "config.json"
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# LLM provider configs
-# ──────────────────────────────────────────────────────────────────────────────
-
 class OllamaConfig(BaseModel):
     base_url: str = "http://localhost:11434"
     temperature: float = 0.1
@@ -79,6 +75,7 @@ class PerAgentOverride(BaseModel):
     temperature: float | None = None
     num_predict: int | None = None
     timeout: int | None = None
+    timeout_budget_s: int | None = None  # wall-clock budget for one LLM call
 
 
 class LLMModelsConfig(BaseModel):
@@ -91,7 +88,9 @@ class LLMModelsConfig(BaseModel):
 
 
 class LLMConfig(BaseModel):
-    provider: Literal["ollama", "openai", "openai_compatible", "groq", "together", "anthropic"] = "ollama"
+    provider: Literal["ollama", "openai", "openai_compatible", "groq", "together", "anthropic"] = (
+        "ollama"
+    )
     models: LLMModelsConfig = Field(default_factory=LLMModelsConfig)
     per_agent_overrides: dict[str, PerAgentOverride] = Field(default_factory=dict)
     ollama: OllamaConfig = Field(default_factory=OllamaConfig)
@@ -103,7 +102,6 @@ class LLMConfig(BaseModel):
 
     def get_agent_override(self, agent_name: str) -> PerAgentOverride:
         return self.per_agent_overrides.get(agent_name, PerAgentOverride())
-
 
 
 class EmbeddingOllamaConfig(BaseModel):
@@ -138,10 +136,18 @@ class LinkedSourceSettings(BaseModel):
 
 class LinkedSourcesConfig(BaseModel):
     enabled: bool = True
-    yc: LinkedSourceSettings = Field(default_factory=lambda: LinkedSourceSettings(enabled=True, max_results=20))
-    github: LinkedSourceSettings = Field(default_factory=lambda: LinkedSourceSettings(enabled=False, max_results=10))
-    producthunt: LinkedSourceSettings = Field(default_factory=lambda: LinkedSourceSettings(enabled=False, max_results=10))
-    crunchbase: LinkedSourceSettings = Field(default_factory=lambda: LinkedSourceSettings(enabled=False, max_results=15))
+    yc: LinkedSourceSettings = Field(
+        default_factory=lambda: LinkedSourceSettings(enabled=True, max_results=20)
+    )
+    github: LinkedSourceSettings = Field(
+        default_factory=lambda: LinkedSourceSettings(enabled=False, max_results=10)
+    )
+    producthunt: LinkedSourceSettings = Field(
+        default_factory=lambda: LinkedSourceSettings(enabled=False, max_results=10)
+    )
+    crunchbase: LinkedSourceSettings = Field(
+        default_factory=lambda: LinkedSourceSettings(enabled=False, max_results=15)
+    )
 
 
 class PipelineSettings(BaseModel):
@@ -157,19 +163,34 @@ class PipelineSettings(BaseModel):
     enrich_enabled: bool = True
     min_lead_score: float = 0.15
     search_cache_ttl: int = 3600
+    pages_per_domain: int = 1  # expand to N signal pages per domain
+    signal_paths: list[str] = Field(
+        default_factory=lambda: ["/", "/about", "/careers", "/technology"]
+    )
     linked_sources: LinkedSourcesConfig = Field(default_factory=LinkedSourcesConfig)
     skip_domains: list[str] = Field(
         default_factory=lambda: [
-            "youtube.com", "twitter.com", "x.com", "facebook.com",
-            "instagram.com", "tiktok.com", "reddit.com",
-            "wikipedia.org", "linkedin.com",
+            "youtube.com",
+            "twitter.com",
+            "x.com",
+            "facebook.com",
+            "instagram.com",
+            "tiktok.com",
+            "reddit.com",
+            "wikipedia.org",
+            "linkedin.com",
         ]
     )
     prefer_domains: list[str] = Field(
         default_factory=lambda: [
-            "crunchbase.com", "glassdoor.com", "builtwith.com",
-            "stackshare.io", "techcrunch.com", "ycombinator.com",
-            "producthunt.com", "github.com",
+            "crunchbase.com",
+            "glassdoor.com",
+            "builtwith.com",
+            "stackshare.io",
+            "techcrunch.com",
+            "ycombinator.com",
+            "producthunt.com",
+            "github.com",
         ]
     )
 
@@ -251,6 +272,14 @@ class SessionConfig(BaseModel):
     memory_lru_summary_maxsize: int = 1024
     conversation_history_limit: int = 50
     conversation_ttl: int = 2_592_000
+    # LLM response cache
+    llm_cache_enabled: bool = True
+    llm_cache_lru_maxsize: int = 512
+    llm_cache_ttl: int = 3_600  # 1 hour default
+    # Context window (SummaryBufferWindow)
+    context_max_tokens: int = 6_000
+    context_max_turns: int = 40
+    context_chunk_size: int = 10
 
 
 class ScoringConfig(BaseModel):
@@ -285,9 +314,27 @@ class EventsConfig(BaseModel):
     webhook_secret: str = ""
 
 
+class RateLimitSettings(BaseModel):
+    rpm: int = 60  # requests per minute (0 = unlimited)
+
+
+class RateLimitsConfig(BaseModel):
+    serper: RateLimitSettings = Field(default_factory=lambda: RateLimitSettings(rpm=60))
+    tavily: RateLimitSettings = Field(default_factory=lambda: RateLimitSettings(rpm=20))
+    bing: RateLimitSettings = Field(default_factory=lambda: RateLimitSettings(rpm=60))
+    github: RateLimitSettings = Field(default_factory=lambda: RateLimitSettings(rpm=30))
+    producthunt: RateLimitSettings = Field(default_factory=lambda: RateLimitSettings(rpm=20))
+    crunchbase: RateLimitSettings = Field(default_factory=lambda: RateLimitSettings(rpm=30))
+    lever: RateLimitSettings = Field(default_factory=lambda: RateLimitSettings(rpm=60))
+
+    def to_dict(self) -> dict[str, int]:
+        return {k: v["rpm"] for k, v in self.model_dump().items()}
+
+
 class LoggingConfig(BaseModel):
     level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     format: str = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    json_format: bool = False
 
 
 class AppConfig(BaseModel):
@@ -300,6 +347,7 @@ class AppConfig(BaseModel):
     output: OutputConfig = Field(default_factory=OutputConfig)
     events: EventsConfig = Field(default_factory=EventsConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
+    rate_limits: RateLimitsConfig = Field(default_factory=RateLimitsConfig)
 
 
 def load_config(path: str | Path | None = None) -> AppConfig:
