@@ -157,19 +157,18 @@ class ConsoleObserver(BaseObserver):
         elif t is SearchCompleted:
             status = "✓" if event.success else "✗"
             print(
-                f"  {status}  [search]  {event.provider:10s}  {event.result_count} results  ({event.latency_ms:.0f}ms)"
+                f"  {status}  [search]  {event.provider:10s} "
+                f" {event.result_count} results  ({event.latency_ms:.0f}ms)"
             )
         elif t is CrawlCompleted:
             status = "✓" if event.success else "✗"
             cached = " [cache]" if event.from_cache else ""
-            print(
-                f"  {status}  [crawl]   {_truncate(event.url, 60)}{cached}  ({event.latency_ms:.0f}ms)"
-            )
+            url = _truncate(event.url, 60)
+            print(f"  {status}  [crawl]   {url}{cached}  ({event.latency_ms:.0f}ms)")
         elif t is LeadScored:
             icon = self._TIER_ICON.get(event.tier, "")
-            print(
-                f"  {icon} [lead]    {event.company_name:30s}  score={event.icp_score:.2f}  {event.tier.upper()}"
-            )
+            name = f"{event.company_name:30s}"
+            print(f"  {icon} [lead]    {name}  score={event.icp_score:.2f}  {event.tier.upper()}")
         elif t is ProxyRotated:
             print(f"  ↻  [proxy]  rotated → {event.new_proxy}  ({event.reason})")
         elif t is PipelineCompleted:
